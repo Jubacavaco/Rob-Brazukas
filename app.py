@@ -27,7 +27,7 @@ st.header("📅 Informações do Confronto & Preços do Mercado")
 col1, col2, col3 = st.columns(3)
 with col1:
     campeonato = st.text_input("Campeonato", "LaLiga 2")
-    id_time_casa = st.number_input("ID Time Casa (na API)", min_value=1, value=541, help="Busque o ID do time na documentação da API ou use mechanisms de busca de ID.")
+    id_time_casa = st.number_input("ID Time Casa (na API)", min_value=1, value=541)
 with col2:
     horario_jogo = st.text_input("Horário do Jogo", "16h00 (BR)")
     id_time_visitante = st.number_input("ID Time Visitante (na API)", min_value=1, value=532)
@@ -47,9 +47,8 @@ with col_o4:
 with col_o5:
     odd_btts = st.number_input("Odd BTTS Sim", min_value=1.01, value=1.85, step=0.01)
 
-# --- FUNÇÃO DE ENVIO TELEGRAM ---
 def enviar_telegram(texto):
-    url = f"https://telegram.org{token_telegram}/sendMessage"
+    url = f"https://api.telegram.org/bot{token_telegram}/sendMessage"
     payload = {"chat_id": chat_telegram, "text": texto, "parse_mode": "Markdown"}
     try:
         r = requests.post(url, json=payload)
@@ -57,16 +56,15 @@ def enviar_telegram(texto):
     except:
         return False
 
-# --- BOTÃO DE DISPARO DA ANÁLISE ---
 if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
     if not chave_rapidapi:
         st.error("🚨 Por favor, insira uma chave válida da RapidAPI na barra lateral antes de continuar.")
     else:
         with st.spinner("Conectando aos servidores da API-Football e coletando histórico..."):
-            url_api = "https://rapidapi.com"
+            url_api = "https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead"
             querystring = {"h2h": f"{id_time_casa}-{id_time_visitante}", "last": "10"}
             headers = {
-                "X-RapidAPI-Host": "://rapidapi.com",
+                "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com",
                 "X-RapidAPI-Key": chave_rapidapi
             }
             
@@ -77,8 +75,8 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                 if "response" not in dados_api or len(dados_api["response"]) == 0:
                     st.error("❌ Nenhum jogo encontrado para os IDs informados. Verifique se os IDs dos times estão corretos na API-Football.")
                 else:
-                    nome_casa = dados_api["response"]["teams"]["home"]["name"]
-                    nome_visitante = dados_api["response"]["teams"]["away"]["name"]
+                    nome_casa = dados_api["response"][0]["teams"]["home"]["name"] if isinstance(dados_api["response"], list) else "Casa"
+                    nome_visitante = dados_api["response"][0]["teams"]["away"]["name"] if isinstance(dados_api["response"], list) else "Visitante"
                     
                     gols_total_confrontos = []
                     btts_confrontos = []
@@ -119,7 +117,7 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                         p_btts = (p_btts_lista + p_btts_odd) / 2
                         prob_ltd = (prob_ltd_lista + p_ltd_odd) / 2
                         
-                        st.success(f"Análise Concluída com Sucesso para: {nome_casa} vs {nome_visitante}!")
+                        st.success(f"Análise Concluída com Sucesso!")
                         
                         col_r1, col_r2 = st.columns(2)
                         with col_r1:
@@ -139,11 +137,6 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                             bars = ax.bar(mercados, valores, color=cores, edgecolor="black", width=0.5)
                             ax.set_ylim(0, 110)
                             ax.set_ylabel("Percentual (%)")
-                            
-                            for bar in bars:
-                                h = bar.get_height()
-                                ax.text(bar.get_x() + bar.get_width()/2., h + 2, f"{h:.1f}%", ha="center", va="bottom", fontweight="bold")
-                            
                             st.pyplot(fig)
                         
                         st.header("⭐ Histórico de Alertas Gerados & Status de Transmissão")
@@ -164,3 +157,7 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                         if p_btts >= 55:
                             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {nome_casa} x {nome_visitante}\n🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas Marcam - SIM\n⏰ *Horário:* {horario_jogo}\n\n📌 Entrada recomendada antes do início!\n\n⚠️ Aposte com responsabilidade."
                             st.text_area("🟢 Enviado ao Telegram (BTTS):", msg, height=150)
+                            if enviar_telegram(msg): st.toast("Mensagem BTTS enviada!")
+                            alertas_gerados += 1
+                            
+                        if prob_ltd >= 51:
