@@ -56,16 +56,29 @@ if submetido:
     if campeonato and time_casa and time_fora and horario:
         st.subheader("📋 Mensagem Formatada Pronto para Copiar")
         
-        # Estrutura exata com base nas suas diretrizes salvas
-        template_tip = (
-            f"🚨 Alerta de Entrada 🚨\n\n"
-            f"🏆 Campeonato: {campeonato}\n"
-            f"🆚 Jogo: {time_casa} x {time_fora}\n"
-            f"🎯 Mercado Principal: {mercado_principal}\n"
-            f"📈 Mercado Secundário (Escanteios): {linha_escanteios}\n"
-            f"⏰ Horário: {horario} (BR)\n\n"
-            f"📊 Odds de Momento:\n"
-            f"• {time_casa}: {odd_casa:.2f} | • Empate: {odd_empate:.2f} | • {time_fora}: {odd_fora:.2f}\n\n"
-            f"📌 Entrada recomendada ao vivo!\n\n"
-            f"⚽ Gestão da Entrada:\n"
-            f"• Buscar o
+        # Correção aqui: Uso de aspas triplas f""" para permitir quebras de linha legítimas
+        template_tip = f"""🚨 Alerta de Entrada 🚨
+
+🏆 Campeonato: {campeonato}
+🆚 Jogo: {time_casa} x {time_fora}
+🎯 Mercado Principal: {mercado_principal}
+📈 Mercado Secundário (Escanteios): {linha_escanteios}
+⏰ Horário: {horario} (BR)
+
+📊 Odds de Momento:
+• {time_casa}: {odd_casa:.2f} | • Empate: {odd_empate:.2f} | • {time_fora}: {odd_fora:.2f}
+
+📌 Entrada recomendada ao vivo!
+
+⚽ Gestão da Entrada:
+• Buscar o melhor momento de entrada durante a partida.
+• Priorizar jogos com intensidade ofensiva e volume de ataques.
+• Caso a linha seja atingida, realizar o green conforme sua gestão.
+
+⚠️ Aposte com responsabilidade. Não há garantias de lucro. Gestão de banca é fundamental no longo prazo."""
+        
+        # Exibe em um bloco de código que permite copiar com 1 clique
+        st.code(template_tip, language="text")
+        st.success("Alerta gerado com sucesso! Clique no botão de copiar no canto direito do bloco acima.")
+    else:
+        st.error("Por favor, preencha os campos obrigatórios: Campeonato, Times e Horário.")
