@@ -19,15 +19,16 @@ time_visitante = st.sidebar.text_input("🆚 Time Visitante:")
 horario = st.sidebar.text_input("⏰ Horário:")
 
 st.sidebar.header("📊 ODDS (Para Cálculo)")
-odd_casa = st.sidebar.number_input("Odd Casa:", value=1.0, step=0.01)
-odd_fora = st.sidebar.number_input("Odd Fora:", value=1.0, step=0.01)
+# Campos adicionados conforme solicitado
+odd_casa = st.sidebar.number_input("Odd Time Casa:", value=1.0, step=0.01)
+odd_visitante = st.sidebar.number_input("Odd Time Visitante:", value=1.0, step=0.01)
 odd_o15 = st.sidebar.number_input("Odd Over 1.5:", value=1.0, step=0.01)
 odd_o25 = st.sidebar.number_input("Odd Over 2.5:", value=1.0, step=0.01)
 odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.0, step=0.01)
 
 # --- CORPO ---
 st.subheader("📋 Dados Estatísticos")
-# AQUI é onde você deve colar a lista de jogos quando o robô abrir no navegador
+# Cole a lista de jogos AQUI no seu navegador
 lista_jogos = st.text_area("Cole a lista aqui:", height=150)
 
 if st.button("▶️ EXECUTAR ANÁLISE"):
