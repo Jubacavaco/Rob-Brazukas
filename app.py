@@ -1,172 +1,66 @@
-27.05.26
-SUL
+import streamlit as st
+import requests
 
-Vasco
+st.set_page_config(page_title="Robô Brazukas", layout="wide")
+st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
 
-Barracas Central
-3
-0
-D
-19.05.26
-SUL
+# --- ESTADO ---
+if "executado" not in st.session_state: st.session_state.executado = False
 
-Audax Italiano
+# --- SIDEBAR COMPLETA ---
+st.sidebar.header("🤖 CONFIGURAÇÃO")
+token = st.sidebar.text_input("🔑 Token:", type="password")
+chat_id = st.sidebar.text_input("📢 ID Canal:", type="password")
 
-Barracas Central
-2
-0
-D
-06.05.26
-SUL
+st.sidebar.header("📅 DADOS DO JOGO")
+campeonato = st.sidebar.text_input("🏆 Campeonato:")
+time_casa = st.sidebar.text_input("🆚 Time Casa:")
+time_visitante = st.sidebar.text_input("🆚 Time Visitante:")
+horario = st.sidebar.text_input("⏰ Horário:")
 
-Barracas Central
+st.sidebar.header("📊 ODDS (Para Cálculo)")
+odd_casa = st.sidebar.number_input("Odd Casa:", value=1.0, step=0.01)
+odd_fora = st.sidebar.number_input("Odd Fora:", value=1.0, step=0.01)
+odd_o15 = st.sidebar.number_input("Odd Over 1.5:", value=1.0, step=0.01)
+odd_o25 = st.sidebar.number_input("Odd Over 2.5:", value=1.0, step=0.01)
+odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.0, step=0.01)
 
-Olimpia Asuncion
-1
-2
-D
-02.05.26
-LPF
+# --- CORPO ---
+st.subheader("📋 Dados Estatísticos")
+# AQUI é onde você deve colar a lista de jogos quando o robô abrir no navegador
+lista_jogos = st.text_area("Cole a lista aqui:", height=150)
 
-Barracas Central
+if st.button("▶️ EXECUTAR ANÁLISE"):
+    if lista_jogos:
+        st.session_state.executado = True
+    else:
+        st.warning("Cole a lista de jogos no campo acima primeiro!")
 
-Banfield
-1
-2
-D
-28.04.26
-SUL
+if st.session_state.executado:
+    # MENSAGEM SEGUINDO SEU PADRÃO
+    msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+           f"🏆 *Campeonato:* {campeonato}\n"
+           f"🆚 *Jogo:* {time_casa} x {time_visitante}\n"
+           f"🎯 *Mercado Principal:* Over 2.5 FT\n"
+           f"⚽ *Mercado Secundário (Escanteios):* Analisar ao vivo\n"
+           f"⏰ *Horário:* {horario}\n"
+           f"⚠️ *Alerta de Entrada:* Entrada recomendada!")
+    
+    st.code(msg)
+    
+    if st.button("🚀 Enviar Sinal"):
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        params = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+        resp = requests.get(url, params=params).json()
+        if resp.get("ok"):
+            st.success("Sinal enviado!")
+        else:
+            st.error(f"Erro: {resp.get('description')}")
 
-Barracas Central
-
-Audax Italiano
-1
-1
-E
-
-Mostrar mais jogos
-Últimos jogos: Huracán
-12.05.26
-LPF
-
-Argentinos Juniors
-
-Huracán
-1
-0
-0
-0
-D
-09.05.26
-LPF
-
-Boca Juniors
-
-Huracán
-2
-3
-1
-1
-V
-03.05.26
-LPF
-
-Racing Club
-
-Huracán
-0
-0
-E
-27.04.26
-LPF
-
-Huracán
-
-Argentinos Juniors
-1
-2
-D
-20.04.26
-LPF
-
-Tigre
-
-Huracán
-1
-1
-E
-
-Mostrar mais jogos
-Confrontos diretos
-23.03.26
-LPF
-
-Huracán
-
-Barracas Central
-0
-0
-17.11.25
-LPF
-
-Barracas Central
-
-Huracán
-1
-1
-03.05.25
-LPF
-
-Huracán
-
-Barracas Central
-0
-1
-04.06.24
-LPF
-
-Barracas Central
-
-Huracán
-0
-2
-17.03.24
-CLP
-
-Barracas Central
-
-Huracán
-1
-0
-30.10.23
-CLP
-
-Huracán
-
-Barracas Central
-0
-0
-17.02.23
-LPF
-
-Huracán
-
-Barracas Central
-2
-0
-13.09.22
-LPF
-
-Huracán
-
-Barracas Central
-1
-1
-11.04.22
-CLP
-
-Huracán
-
-Barracas Central
-1
-2
+    # CONTROLE DE RESULTADOS
+    st.subheader("🎯 Registrar Resultado")
+    c1, c2, c3, c4 = st.columns(4)
+    if c1.button("🟢 Green"): st.success("Green registrado!")
+    if c2.button("🔴 Red"): st.error("Red registrado!")
+    if c3.button("🟡 Push"): st.warning("Push registrado!")
+    if c4.button("⚪ Resetar"): st.session_state.executado = False; st.rerun()
