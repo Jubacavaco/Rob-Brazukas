@@ -1,71 +1,71 @@
 import streamlit as st
-import pandas as pd
-import requests
-import re
-import matplotlib.pyplot as plt
 
 # ==============================================================================
-# CONFIGURAÇÕES INICIAIS & CONSTANTES
+# CONFIGURAÇÕES DA PÁGINA
 # ==============================================================================
-st.set_page_config(page_title="Robô Brazukas - Painel de Tips", layout="wide")
+st.set_page_config(page_title="Robô Brazukas - Gerador de Tips", layout="centered")
 
-# ==============================================================================
-# FUNÇÕES DE PROCESSAMENTO DE TEXTO (REGEX)
-# ==============================================================================
-def extrair_dados_partida(texto):
-    """
-    Função para processar o texto bruto da mensagem e extrair as informações
-    dos blocos de jogos, corrigindo variações de digitação (como Únlimos).
-    """
-    # Linha 137 corrigida: Unificação das strings para evitar quebra de linha física
-    bloco_casa_match = re.search(r"(.*?)(?:Últimos jogos:|Únlimos jogos:)", texto, re.DOTALL)
-    bloco_fora_match = re.search(r"(?:Últimos jogos:|Únlimos jogos:)(.*)", texto, re.DOTALL)
-    
-    casa_texto = bloco_casa_match.group(1).strip() if bloco_casa_match else ""
-    fora_texto = bloco_fora_match.group(1).strip() if bloco_fora_match else ""
-    
-    return casa_texto, fora_texto
-
-# ==============================================================================
-# INTERFACE DO UTILIZADOR (STREAMLIT)
-# ==============================================================================
 st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
-st.write("Insira os dados abaixo para gerar a formatação padrão da entrada.")
+st.write("Preencha os campos abaixo para gerar o Alerta de Entrada padronizado.")
 
-# Área de texto para colar a mensagem bruta
-entrada_texto = st.text_area("Cole aqui o texto bruto da análise:", height=200)
+# ==============================================================================
+# FORMULÁRIO COM OS CAMPOS DO COLAB
+# ==============================================================================
+with st.form("form_tips"):
+    st.subheader("📝 Dados da Partida")
+    
+    # Campo para o Campeonato
+    campeonato = st.text_input("🏆 Campeonato:", placeholder="Ex: Campeonato Brasileiro Série A")
+    
+    # Campos para o Jogo (Equipes)
+    col_jogos = st.columns(2)
+    with col_jogos[0]:
+        time_casa = st.text_input("🆚 Time da Casa:", placeholder="Ex: Athletico Paranaense")
+    with col_jogos[1]:
+        time_fora = st.text_input("🆚 Time de Fora:", placeholder="Ex: Botafogo")
+        
+    st.markdown("---")
+    st.subheader("📈 Mercado & Odds")
+    
+    # Campos para as Odds (Probabilidades)
+    col_odds = st.columns(3)
+    with col_odds[0]:
+        odd_casa = st.number_input("Odds Casa (1):", min_value=1.0, max_value=100.0, value=2.0, step=0.01)
+    with col_odds[1]:
+        odd_empate = st.number_input("Odds Empate (X):", min_value=1.0, max_value=100.0, value=3.40, step=0.01)
+    with col_odds[2]:
+        odd_fora = st.number_input("Odds Fora (2):", min_value=1.0, max_value=100.0, value=3.50, step=0.01)
 
-if st.button("Processar Análise"):
-    if entrada_texto:
-        casa, fora = extrair_dados_partida(entrada_texto)
+    # Configuração dos Mercados
+    mercado_principal = st.text_input("🎯 Mercado Principal:", value="Resultado Final (1X2) ou Ambas Marcam")
+    linha_escanteios = st.text_input("📐 Linha de Escanteios (Mercado Secundário):", placeholder="Ex: Mais de 9.5 Escanteios")
+    
+    st.markdown("---")
+    st.subheader("⏰ Horário e Configurações de Envio")
+    
+    # Horário do Jogo
+    horario = st.text_input("⏰ Horário do Jogo:", placeholder="Ex: 19h30")
+    
+    # Botão para processar e gerar o texto final
+    submetido = st.form_submit_button("🔥 Gerar Alerta de Entrada")
+
+# ==============================================================================
+# PROCESSAMENTO E SAÍDA DA TIP FORMATADA
+# ==============================================================================
+if submetido:
+    if campeonato and time_casa and time_fora and horario:
+        st.subheader("📋 Mensagem Formatada Pronto para Copiar")
         
-        st.subheader("📊 Dados Extraídos com Sucesso")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Histórico Equipas da Casa:**")
-            st.info(casa if casa else "Nenhum dado encontrado para a equipa da casa.")
-            
-        with col2:
-            st.markdown("**Histórico Equipas de Fora:**")
-            st.info(fora if fora else "Nenhum dado encontrado para a equipa de fora.")
-            
-        # ======================================================================
-        # MODELO DE SAÍDA PADRÃO (CONFORME DIRETRIZES)
-        # ======================================================================
-        st.subheader("📋 Mensagem Formatada para Envio")
-        
+        # Estrutura exata com base nas suas diretrizes salvas
         template_tip = (
-            "🚨 **Alerta de Entrada** 🚨\n\n"
-            "🏆 **Campeonato:** [Inserir Campeonato]\n"
-            "🆚 **Jogo:** [Equipa Casa] x [Equipa Fora]\n"
-            "🎯 **Mercado Principal:** [Inserir Mercado]\n"
-            "📈 **Mercado Secundário (Escanteios):** Mais de X Escanteios\n"
-            "⏰ **Horário:** [Inserir Horário] (BR)\n\n"
-            "📌 *Entrada recomendada ao vivo!*\n"
-            "⚠️ Aposte com responsabilidade. Gestão de banca é fundamental."
-        )
-        
-        st.code(template_tip, language="text")
-    else:
-        st.warning("Por favor, cole algum texto antes de processar.")
+            f"🚨 Alerta de Entrada 🚨\n\n"
+            f"🏆 Campeonato: {campeonato}\n"
+            f"🆚 Jogo: {time_casa} x {time_fora}\n"
+            f"🎯 Mercado Principal: {mercado_principal}\n"
+            f"📈 Mercado Secundário (Escanteios): {linha_escanteios}\n"
+            f"⏰ Horário: {horario} (BR)\n\n"
+            f"📊 Odds de Momento:\n"
+            f"• {time_casa}: {odd_casa:.2f} | • Empate: {odd_empate:.2f} | • {time_fora}: {odd_fora:.2f}\n\n"
+            f"📌 Entrada recomendada ao vivo!\n\n"
+            f"⚽ Gestão da Entrada:\n"
+            f"• Buscar o
