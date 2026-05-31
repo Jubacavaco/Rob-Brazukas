@@ -1,281 +1,137 @@
 import streamlit as st
+import re
 import requests
+import os
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --- CONFIGURAÇÃO DA PÁGINA WEB ---
-st.set_page_config(page_title="Painel de Análise Híbrida PRO", page_icon="⚽", layout="wide")
+# Configuração inicial da página Streamlit
+st.set_page_config(page_title="Painel de Controle de Entradas", page_icon="🛠️", layout="centered")
 
-st.title("🏆 Painel Automatizado de Entradas de Futebol")
-st.markdown("Busque dados diretamente da API-Football, calcule as probabilidades híbridas e envie para o Telegram com 1 clique.")
+st.title("🛠️ PAINEL DE CONTROLE DE ENTRADAS")
+st.markdown("---")
 
-# --- SIDEBAR ---
-st.sidebar.header("🛠️ Configurações e Chaves")
+# --- INTERFACE GRÁFICA (SUBSTITUINDO OS @PARAM DO COLAB) ---
 
-TOKEN_TELEGRAM_PADRAO = "SEU_TOKEN"
-CHAT_ID_TELEGRAM_PADRAO = "SEU_CHAT_ID"
-CHAVE_RAPIDAPI_PADRAO = "SUA_CHAVE"
+st.subheader("📅 INFORMAÇÕES BÁSICAS DO JOGO")
+Campeonato = st.text_input("Campeonato", value="Brasileirão")
+Time_Casa = st.text_input("Time Casa", value="Cruzeiro")
+Time_Visitante = st.text_input("Time Visitante", value="Fluminense")
+Horario_Jogo = st.text_input("Horário do Jogo", value="16h00 (BR)")
 
-token_telegram = st.sidebar.text_input(
-    "Token Telegram",
-    value=TOKEN_TELEGRAM_PADRAO,
-    type="password"
-)
+st.markdown("---")
+st.subheader("👑 DETERMINAR FAVORITO DO CONFRONTO")
+Escolha_Favorito = st.selectbox("Escolha quem é o favorito ou se o jogo é equilibrado:", ["Casa", "Visitante", "Nenhum / Equilibrado"])
 
-chat_telegram = st.sidebar.text_input(
-    "Chat ID",
-    value=CHAT_ID_TELEGRAM_PADRAO
-)
-
-chave_rapidapi = st.sidebar.text_input(
-    "RapidAPI Key",
-    value=CHAVE_RAPIDAPI_PADRAO,
-    type="password"
-)
-
-# --- FORMULÁRIO ---
-st.header("📅 Informações do Jogo")
-
-col1, col2, col3 = st.columns(3)
-
+st.markdown("---")
+st.subheader("📊 ODDS ATUAIS DO MERCADO")
+col1, col2 = st.columns(2)
 with col1:
-    campeonato = st.text_input("Campeonato", "LaLiga 2")
-    id_time_casa = st.number_input("ID Time Casa", min_value=1, value=541)
-
+    Odd_Casa = st.number_input("Odd Casa", value=1.85, format="%.2f")
+    Odd_Over_15_FT = st.number_input("Odd Over 1.5 FT", value=1.33, format="%.2f")
+    Odd_Over_25_FT = st.number_input("Odd Over 2.5 FT", value=2.05, format="%.2f")
 with col2:
-    horario_jogo = st.text_input("Horário", "16h00")
-    id_time_visitante = st.number_input("ID Time Visitante", min_value=1, value=532)
+    Odd_Visitante = st.number_input("Odd Visitante", value=4.40, format="%.2f")
+    Odd_BTTS_Sim = st.number_input("Odd BTTS Sim", value=1.90, format="%.2f")
 
-with col3:
-    escolha_favorito = st.selectbox(
-        "Favorito",
-        ["Casa", "Visitante", "Nenhum / Equilibrado"]
-    )
+st.markdown("---")
+st.subheader("📋 DADOS ESTATÍSTICOS DO SITE")
+texto_padrao_estatisticas = "28.05.26 LIB  Cruzeiro  Barcelona 4 0 V 24.05.26 SRA  Cruzeiro  Chapecoense 2 1 V 19.05.26 LIB  Boca Juniors  Cruzeiro 1 1 E 16.05.26 SRA  Palmeiras  Cruzeiro 1 1 E 12.05.26 COP  Cruzeiro  Goiás 1 0 V  Mostrar mais jogos Últimos jogos: Fluminense 27.05.26 LIB  Fluminense  La Guaira 3 1 V 23.05.26 SRA  Mirassol  Fluminense 1 0 D 19.05.26 LIB  Fluminense  Bolivar 2 1 V 16.05.26 SRA  Fluminense  São Paulo 2 1 V 12.05.26 COP  Fluminense  Operário 2 1 V  Mostrar mais jogos Confrontos diretos 09.11.25 SRA  Cruzeiro  Fluminense 0 0 17.07.25 SRA  Fluminense  Cruzeiro 0 2 03.10.24 SRA  Fluminense  Cruzeiro 1 0 19.06.24 SRA  Cruzeiro  Fluminense 2 0 20.09.23 SRA  Fluminense  Cruzeiro 1 0 10.05.23 SRA  Cruzeiro  Fluminense 0 2 12.07.22 COP  Cruzeiro  Fluminense 0 3 23.06.22 COP  Fluminense  Cruzeiro 2 1 09.10.19 SRA  Cruzeiro  Fluminense 0 0 05.06.19 COP  Cruzeiro  Fluminense 3 2 2 2"
+Lista_de_Jogos_do_Site = st.text_area("Cole os dados estatísticos aqui:", value=texto_padrao_estatisticas, height=150)
 
-st.markdown("### 📊 Odds")
+st.markdown("---")
+st.subheader("🎯 ATUALIZAÇÃO DO RESULTADO")
+Resultado_Aposta = st.selectbox("Resultado da Aposta (Selecione após o fim do jogo):", ["Nenhum", "Green", "Red", "Push"])
 
-col_o1, col_o2, col_o3, col_o4, col_o5 = st.columns(5)
+st.markdown("---")
 
-with col_o1:
-    odd_casa = st.number_input("Odd Casa", min_value=1.01, value=1.95)
+# --- LÓGICA DO SEU CÓDIGO ORIGINAL ---
 
-with col_o2:
-    odd_visitante = st.number_input("Odd Visitante", min_value=1.01, value=3.60)
+# Define textualmente o favorito com base na escolha efetuada no painel
+if Escolha_Favorito == "Casa":
+    Texto_Favorito = f"Casa ({Time_Casa})"
+elif Escolha_Favorito == "Visitante":
+    Texto_Favorito = f"Visitante ({Time_Visitante})"
+else:
+    Texto_Favorito = "Nenhum / Jogo Equilibrado"
 
-with col_o3:
-    odd_o15 = st.number_input("Odd Over 1.5", min_value=1.01, value=1.35)
+# Lógica automática para definir a Odd do Favorito e da Zebra para o cálculo do LTD
+if Odd_Casa <= Odd_Visitante:
+    calc_odd_favorito = Odd_Casa
+    calc_odd_zebra = Odd_Visitante
+else:
+    calc_odd_favorito = Odd_Visitante
+    calc_odd_zebra = Odd_Casa
 
-with col_o4:
-    odd_o25 = st.number_input("Odd Over 2.5", min_value=1.01, value=2.10)
+# Arquivos locais de controle de estado
+ESTADO_FILE = "estado_fluxo.txt"
+IDS_FILE = "mensagens_enviadas.json"
 
-with col_o5:
-    odd_btts = st.number_input("Odd BTTS", min_value=1.01, value=1.85)
+# Carrega o estado atual (se é envio de sinal ou atualização de resultado)
+if os.path.exists(ESTADO_FILE):
+    with open(ESTADO_FILE, "r") as f:
+        passo_atual = f.read().strip()
+else:
+    passo_atual = "SINAL"
 
+# Mostrar o status do fluxo atual na tela de forma amigável
+if passo_atual == "SINAL":
+    st.info("🔄 Status Atual: Pronto para gerar e enviar novo **SINAL**.")
+else:
+    st.warning("🔄 Status Atual: Sinal já enviado. Aguardando processamento de **RESULTADO**.")
 
-def enviar_telegram(texto):
+# 📤 FUNÇÃO TRANSMISSÃO TELEGRAM VIA ROTA LIMPA
+def disparar_mensagem_final_com_rota_limpa(texto_da_mensagem):
+    protocolo_seguro = "https://"
+    subdominio_api = "api.telegram.org"
+    token_atual = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
+    chat_pessoal_id = "-1003925163611"
 
-    url = f"https://api.telegram.org/bot{token_telegram}/sendMessage"
-
-    payload = {
-        "chat_id": chat_telegram,
-        "text": texto,
+    URL_REAL_DO_TELEGRAM = f"{protocolo_seguro}{subdominio_api}/bot{token_atual}/sendMessage"
+    DADOS_DA_REQUISICAO = {
+        "chat_id": chat_pessoal_id,
+        "text": texto_da_mensagem,
         "parse_mode": "Markdown"
     }
 
     try:
-        r = requests.post(url, json=payload)
-        return r.status_code == 200
-    except:
-        return False
+        servico_post = requests.post(URL_REAL_DO_TELEGRAM, data=DADOS_DA_REQUISICAO)
+        if servico_post.status_code == 200:
+            resposta_json = servico_post.json()
+            return resposta_json.get("result", {}).get("message_id")
+        else:
+            st.error(f"❌ FALHA NO SERVIDOR TELEGRAM: {servico_post.status_code} - {servico_post.text}")
+            return None
+    except Exception as erro_fatal_de_rede:
+        st.error(f"❌ ERRO DE REDE DETECTADO: {erro_fatal_de_rede}")
+        return None
 
+# 🔄 FUNÇÃO EDITAR MENSAGEM DO TELEGRAM
+def editar_mensagem_telegram(message_id, novo_texto):
+    protocolo_seguro = "https://"
+    subdominio_api = "api.telegram.org"
+    token_atual = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
+    chat_pessoal_id = "-1003925163611"
 
-if st.button("🚀 Executar Análise"):
-
-    url_api = "https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead"
-
-    querystring = {
-        "h2h": f"{id_time_casa}-{id_time_visitante}",
-        "last": "10"
-    }
-
-    headers = {
-        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com",
-        "X-RapidAPI-Key": chave_rapidapi
+    URL_EDIT_TELEGRAM = f"{protocolo_seguro}{subdominio_api}/bot{token_atual}/editMessageText"
+    DADOS_DA_REQUISICAO = {
+        "chat_id": chat_pessoal_id,
+        "message_id": message_id,
+        "text": novo_texto,
+        "parse_mode": "Markdown"
     }
 
     try:
-
-        response = requests.get(
-            url_api,
-            headers=headers,
-            params=querystring
-        )
-
-        dados_api = response.json()
-
-        if len(dados_api["response"]) == 0:
-            st.error("Nenhum confronto encontrado.")
-
+        servico_post = requests.post(URL_EDIT_TELEGRAM, data=DADOS_DA_REQUISICAO)
+        if servico_post.status_code == 200:
+            st.success(f"✅ MENSAGEM ID {message_id} EDITADA COM SUCESSO NO TELEGRAM!")
         else:
-
-            nome_casa = dados_api["response"][0]["teams"]["home"]["name"]
-            nome_visitante = dados_api["response"][0]["teams"]["away"]["name"]
-
-            gols_total = []
-            btts_lista = []
-            empates = 0
-
-            for game in dados_api["response"]:
-
-                g_home = game["goals"]["home"]
-                g_away = game["goals"]["away"]
-
-                if g_home is not None and g_away is not None:
-
-                    total = g_home + g_away
-
-                    gols_total.append(total)
-
-                    btts_lista.append(
-                        g_home > 0 and g_away > 0
-                    )
-
-                    if g_home == g_away:
-                        empates += 1
-
-            total_jogos = len(gols_total)
-
-            p_o15_lista = (
-                sum(1 for g in gols_total if g > 1.5)
-                / total_jogos
-            ) * 100
-
-            p_o25_lista = (
-                sum(1 for g in gols_total if g > 2.5)
-                / total_jogos
-            ) * 100
-
-            p_btts_lista = (
-                sum(1 for b in btts_lista if b)
-                / total_jogos
-            ) * 100
-
-            prob_ltd_lista = (
-                (total_jogos - empates)
-                / total_jogos
-            ) * 100
-
-            p_o15_odd = (1 / odd_o15) * 100
-            p_o25_odd = (1 / odd_o25) * 100
-            p_btts_odd = (1 / odd_btts) * 100
-
-            calc_odd_favorito = (
-                odd_casa
-                if odd_casa <= odd_visitante
-                else odd_visitante
-            )
-
-            calc_odd_zebra = (
-                odd_visitante
-                if odd_casa <= odd_visitante
-                else odd_casa
-            )
-
-            p_ltd_odd = (
-                (1 / calc_odd_favorito)
-                + (1 / calc_odd_zebra)
-            ) * 100
-
-            if p_ltd_odd > 100:
-                p_ltd_odd = 99
-
-            p_o15 = (p_o15_lista + p_o15_odd) / 2
-            p_o25 = (p_o25_lista + p_o25_odd) / 2
-            p_btts = (p_btts_lista + p_btts_odd) / 2
-            prob_ltd = (prob_ltd_lista + p_ltd_odd) / 2
-
-            st.success("✅ Análise concluída")
-
-            st.metric("Over 1.5", f"{p_o15:.1f}%")
-            st.metric("Over 2.5", f"{p_o25:.1f}%")
-            st.metric("BTTS", f"{p_btts:.1f}%")
-            st.metric("LTD", f"{prob_ltd:.1f}%")
-
-            fig, ax = plt.subplots()
-
-            mercados = [
-                "Over 1.5",
-                "Over 2.5",
-                "BTTS",
-                "LTD"
-            ]
-
-            valores = [
-                p_o15,
-                p_o25,
-                p_btts,
-                prob_ltd
-            ]
-
-            ax.bar(mercados, valores)
-
-            st.pyplot(fig)
-
-            # ALERTAS
-
-            if p_o25 >= 65:
-
-                msg = f"""
-🚨 Alerta de Entrada 🚨
-
-🏆 Campeonato: {campeonato}
-🆚 Jogo: {nome_casa} x {nome_visitante}
-🎯 Mercado: Over Gols
-💥 Prognóstico: Over 2.5 FT
-⏰ Horário: {horario_jogo}
-
-⚠️ Aposte com responsabilidade.
-"""
-
-                st.text_area("Over 2.5", msg)
-
-                enviar_telegram(msg)
-
-            if p_btts >= 55:
-
-                msg = f"""
-🚨 Alerta de Entrada 🚨
-
-🏆 Campeonato: {campeonato}
-🆚 Jogo: {nome_casa} x {nome_visitante}
-🎯 Mercado: BTTS
-💥 Prognóstico: Ambas Marcam SIM
-⏰ Horário: {horario_jogo}
-
-⚠️ Aposte com responsabilidade.
-"""
-
-                st.text_area("BTTS", msg)
-
-                enviar_telegram(msg)
-
-            if prob_ltd >= 51:
-
-                msg = f"""
-🚨 Alerta de Entrada 🚨
-
-🏆 Campeonato: {campeonato}
-🆚 Jogo: {nome_casa} x {nome_visitante}
-🎯 Mercado: LTD
-💥 Prognóstico: Contra o Empate
-⏰ Horário: {horario_jogo}
-
-⚠️ Aposte com responsabilidade.
-"""
-
-                st.text_area("LTD", msg)
-
-                enviar_telegram(msg)
-
+            st.error(f"❌ FALHA AO EDITAR NO TELEGRAM: {servico_post.status_code} - {servico_post.text}")
     except Exception as e:
-        st.error(f"Erro: {e}")
+        st.error(f"❌ ERRO DE REDE AO EDITAR: {e}")
+
+# 🧠 MOTOR DE LEITURA TEXTUAL
+def extrair_dados_estatisticos(texto_bruto):
+    texto_limpo = " ".join(texto_bruto.split())
+    bloco_casa_match = re.search(r"(.*?)(?:Últimos jogos:|Únlimos
