@@ -1,55 +1,50 @@
-import streamlit as st
+# @title 🛠️ PAINEL DE CONTROLE DE ENTRADAS { display-mode: "form" }
+
+# @markdown ---
+# @markdown ### 📅 INFORMAÇÕES BÁSICAS DO JOGO
+Campeonato = "Brasileirão" 
+Time_Casa = "Cruzeiro" 
+Time_Visitante = "Fluminense" 
+Horario_Jogo = "16h00 (BR)" 
+
+# @markdown ---
+# @markdown ### 👑 DETERMINAR FAVORITO DO CONFRONTO
+Escolha_Favorito = "Casa" 
+
+# @markdown ---
+# @markdown ### 📊 ODDS ATUAIS DO MERCADO
+Odd_Casa = 1.85 
+Odd_Visitante = 4.40 
+Odd_Over_15_FT = 1.33 
+Odd_BTTS_Sim = 1.90 
+Odd_Over_25_FT = 2.05 
+
+# @markdown ---
+# @markdown ### 📋 DADOS ESTATÍSTICOS DO SITE
+Lista_de_Jogos_do_Site = "28.05.26 LIB  Cruzeiro  Barcelona 4 0 V 24.05.26 SRA  Cruzeiro  Chapecoense 2 1 V 19.05.26 LIB  Boca Juniors  Cruzeiro 1 1 E 16.05.26 SRA  Palmeiras  Cruzeiro 1 1 E 12.05.26 COP  Cruzeiro  Goiás 1 0 V  Mostrar mais jogos Últimos jogos: Fluminense 27.05.26 LIB  Fluminense  La Guaira 3 1 V 23.05.26 SRA  Mirassol  Fluminense 1 0 D 19.05.26 LIB  Fluminense  Bolivar 2 1 V 16.05.26 SRA  Fluminense  São Paulo 2 1 V 12.05.26 COP  Fluminense  Operário 2 1 V  Mostrar mais jogos Confrontos diretos 09.11.25 SRA  Cruzeiro  Fluminense 0 0 17.07.25 SRA  Fluminense  Cruzeiro 0 2 03.10.24 SRA  Fluminense  Cruzeiro 1 0 19.06.24 SRA  Cruzeiro  Fluminense 2 0 20.09.23 SRA  Fluminense  Cruzeiro 1 0 10.05.23 SRA  Cruzeiro  Fluminense 0 2 12.07.22 COP  Cruzeiro  Fluminense 0 3 23.06.22 COP  Fluminense  Cruzeiro 2 1 09.10.19 SRA  Cruzeiro  Fluminense 0 0 05.06.19 COP  Cruzeiro  Fluminense 3 2 2 2" 
+
+# @markdown ---
+# @markdown ### 🎯 ATUALIZAÇÃO DO RESULTADO
+Resultado_Aposta = "Green" 
+
 import re
 import requests
+import os
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Robô Brazukas - Autônomo", layout="wide")
-st.title("🤖 Robô Brazukas - Decisão Autônoma")
+# Lógica de Favorito
+if Escolha_Favorito == "Casa":
+    Texto_Favorito = f"Casa ({Time_Casa})"
+elif Escolha_Favorito == "Visitante":
+    Texto_Favorito = f"Visitante ({Time_Visitante})"
+else:
+    Texto_Favorito = "Nenhum / Jogo Equilibrado"
 
-# --- SIDEBAR (CONFIGURAÇÃO E ODDS) ---
-st.sidebar.header("🔑 Configurações")
-token = st.sidebar.text_input("Token Telegram:", type="password")
-chat_id = st.sidebar.text_input("ID Canal:", type="password")
-
-st.sidebar.header("📊 ODDS Atuais")
-odd_casa = st.sidebar.number_input("Odd Casa:", value=2.0)
-odd_fora = st.sidebar.number_input("Odd Fora:", value=3.0)
-odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.8)
-
-# --- CORPO ---
-lista_jogos = st.text_area("Cole a lista de histórico aqui:", height=200)
-
-def analisar_dados(texto):
-    # Procura todos os pares de números (gols) no formato "X-Y" ou "X Y"
-    gols = re.findall(r'(\d+)\s*[-:]\s*(\d+)', texto)
-    if not gols: return 0, 0
-    
-    total_gols = sum(int(g[0]) + int(g[1]) for g in gols)
-    btts_count = sum(1 for g in gols if int(g[0]) > 0 and int(g[1]) > 0)
-    
-    media = total_gols / len(gols)
-    prob_btts = (btts_count / len(gols)) * 100
-    return media, prob_btts
-
-if st.button("🚀 ANALISAR E ENVIAR"):
-    media, prob_btts = analisar_dados(lista_jogos)
-    
-    # LÓGICA DE DECISÃO DO ROBÔ
-    if media >= 2.8 and odd_btts <= 1.90:
-        tipo = "BTTS (Ambas Marcam)"
-    elif media >= 2.5:
-        tipo = "Over 2.5 FT"
-    elif media >= 1.8:
-        tipo = "Over 1.5 FT"
-    elif odd_casa < odd_fora:
-        tipo = "Casa Vence"
-    else:
-        tipo = "Contra o Empate (LTD)"
-        
-    st.write(f"📊 **Dados extraídos:** Média {media:.2f} | Prob. BTTS {prob_btts:.0f}%")
-    st.success(f"O robô decidiu pela estratégia: **{tipo}**")
-    
-    # MENSAGEM (O robô monta baseado na decisão)
-    msg = f"🚨 *Alerta de Entrada* 🚨\n\n🎯 *Mercado:* {tipo}\n..." # (Aqui entram seus modelos)
-    
-    # Envio Automático
-    # ... (código de request.get para o Telegram)
+if Odd_Casa <= Odd_Visitante:
+    calc_odd_favorito = Odd_Casa
+    calc_odd_zebra = Odd_Visitante
+else:
+    calc_odd_favorito = Odd_Visitante
+    calc_odd_zebra = Odd
