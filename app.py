@@ -27,7 +27,7 @@ st.header("📅 Informações do Confronto & Preços do Mercado")
 col1, col2, col3 = st.columns(3)
 with col1:
     campeonato = st.text_input("Campeonato", "LaLiga 2")
-    id_time_casa = st.number_input("ID Time Casa (na API)", min_value=1, value=541, help="Busque o ID do time na documentação da API ou use mecanismos de busca de ID.")
+    id_time_casa = st.number_input("ID Time Casa (na API)", min_value=1, value=541, help="Busque o ID do time na documentação da API ou use mechanisms de busca de ID.")
 with col2:
     horario_jogo = st.text_input("Horário do Jogo", "16h00 (BR)")
     id_time_visitante = st.number_input("ID Time Visitante (na API)", min_value=1, value=532)
@@ -63,7 +63,6 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
         st.error("🚨 Por favor, insira uma chave válida da RapidAPI na barra lateral antes de continuar.")
     else:
         with st.spinner("Conectando aos servidores da API-Football e coletando histórico..."):
-            # --- ACESSO DIRETO VIA API-FOOTBALL (H2H) ---
             url_api = "https://rapidapi.com"
             querystring = {"h2h": f"{id_time_casa}-{id_time_visitante}", "last": "10"}
             headers = {
@@ -78,11 +77,9 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                 if "response" not in dados_api or len(dados_api["response"]) == 0:
                     st.error("❌ Nenhum jogo encontrado para os IDs informados. Verifique se os IDs dos times estão corretos na API-Football.")
                 else:
-                    # Coleta os nomes reais gravados na API
-                    nome_casa = dados_api["response"][0]["teams"]["home"]["name"]
-                    nome_visitante = dados_api["response"][0]["teams"]["away"]["name"]
+                    nome_casa = dados_api["response"]["teams"]["home"]["name"]
+                    nome_visitante = dados_api["response"]["teams"]["away"]["name"]
                     
-                    # Processamento dos gols das partidas estruturadas da API
                     gols_total_confrontos = []
                     btts_confrontos = []
                     empates_contagem = 0
@@ -103,13 +100,11 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                     if total_jogos_validos == 0:
                         st.error("❌ Os dados coletados não possuem informações completas de gols.")
                     else:
-                        # Cálculos Estatísticos Puros com base no JSON da API
                         p_o15_lista = (sum(1 for g in gols_total_confrontos if g > 1.5) / total_jogos_validos) * 100
                         p_o25_lista = (sum(1 for g in gols_total_confrontos if g > 2.5) / total_jogos_validos) * 100
                         p_btts_lista = (sum(1 for b in btts_confrontos if b) / total_jogos_validos) * 100
                         prob_ltd_lista = ((total_jogos_validos - empates_contagem) / total_jogos_validos) * 100
                         
-                        # Cálculos de Probabilidades das Odds
                         p_o15_odd = (1 / odd_o15) * 100
                         p_o25_odd = (1 / odd_o25) * 100
                         p_btts_odd = (1 / odd_btts) * 100
@@ -119,17 +114,14 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                         p_ltd_odd = ((1 / calc_odd_favorito) + (1 / calc_odd_zebra)) * 100
                         if p_ltd_odd > 100: p_ltd_odd = 99
                         
-                        # Fusão Híbrida Final
                         p_o15 = (p_o15_lista + p_o15_odd) / 2
                         p_o25 = (p_o25_lista + p_o25_odd) / 2
                         p_btts = (p_btts_lista + p_btts_odd) / 2
                         prob_ltd = (prob_ltd_lista + p_ltd_odd) / 2
                         
-                        # --- EXIBIÇÃO DE RESULTADOS NA TELA WEB ---
                         st.success(f"Análise Concluída com Sucesso para: {nome_casa} vs {nome_visitante}!")
                         
                         col_r1, col_r2 = st.columns(2)
-                        
                         with col_r1:
                             st.subheader("📈 Probabilidades Híbridas Finais")
                             st.metric("Over 1.5 FT", f"{p_o15:.1f}%")
@@ -154,11 +146,8 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                             
                             st.pyplot(fig)
                         
-                        # --- VERIFICAÇÃO DE DIRETRIZES E DISPARO ---
                         st.header("⭐ Histórico de Alertas Gerados & Status de Transmissão")
-                        
                         texto_favorito = f"Casa ({nome_casa})" if escolha_favorito == "Casa" else (f"Visitante ({nome_visitante})" if escolha_favorito == "Visitante" else "Nenhum / Equilibrado")
-                        
                         alertas_gerados = 0
                         
                         if p_o25 >= 65:
@@ -169,3 +158,9 @@ if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
                         elif p_o15 >= 75:
                             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {nome_casa} x {nome_visitante}\n🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* Over 1.5 FT\n⏰ *Horário:* {horario_jogo}\n\n📌 Entrada recomendada antes do início!\n\n⚠️ Aposte com responsabilidade."
                             st.text_area("🟢 Enviado ao Telegram (Over 1.5):", msg, height=150)
+                            if enviar_telegram(msg): st.toast("Mensagem Over 1.5 enviada!")
+                            alertas_gerados += 1
+                        
+                        if p_btts >= 55:
+                            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {nome_casa} x {nome_visitante}\n🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas Marcam - SIM\n⏰ *Horário:* {horario_jogo}\n\n📌 Entrada recomendada antes do início!\n\n⚠️ Aposte com responsabilidade."
+                            st.text_area("🟢 Enviado ao Telegram (BTTS):", msg, height=150)
