@@ -6,7 +6,6 @@ st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
 
 # --- ESTADO ---
 if "executado" not in st.session_state: st.session_state.executado = False
-if "res" not in st.session_state: st.session_state.res = "Nenhum"
 if "msg_id" not in st.session_state: st.session_state.msg_id = None
 
 # --- SIDEBAR COMPLETA ---
@@ -39,16 +38,15 @@ if st.button("▶️ EXECUTAR ANÁLISE"):
         st.warning("Cole a lista de jogos primeiro!")
 
 if st.session_state.executado:
-    # Simulação do motor (Probabilidade fixa para teste)
     prob_calculada = 60 
     
     if prob_calculada >= 55:
+        # MENSAGEM LIMPA (Sem favorito, sem status)
         msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
-               f"🏆 {campeonato} | {horario}\n"
-               f"🆚 {time_casa} x {time_visitante}\n"
-               f"👑 Favorito: {favorito}\n"
-               f"💰 *Aposta:* Over 2.5 FT\n"
-               f"👉 *Status:* {st.session_state.res}")
+               f"🏆 *Campeonato:* {campeonato}\n"
+               f"⏰ *Horário:* {horario}\n"
+               f"🆚 *Jogo:* {time_casa} x {time_visitante}\n"
+               f"💰 *Aposta:* Over 2.5 FT")
         
         st.code(msg)
         
@@ -71,20 +69,13 @@ if st.session_state.executado:
                     except Exception as e:
                         st.error(f"Erro de conexão: {e}")
         
-        # Botões de Edição
+        # Botões de Controle (Apenas para seu controle no Painel)
         if st.session_state.msg_id:
-            st.subheader("🎯 Atualizar Resultado")
-            c1, c2, c3 = st.columns(3)
-            def editar(novo_status):
-                st.session_state.res = novo_status
-                msg_edit = msg.replace(f"👉 *Status:* Nenhum", f"👉 *Status:* {novo_status}")
-                url = f"https://api.telegram.org/bot{token}/editMessageText"
-                params = {"chat_id": chat_id, "message_id": st.session_state.msg_id, "text": msg_edit, "parse_mode": "Markdown"}
-                requests.get(url, params=params)
-                st.rerun()
-
-            if c1.button("🟢 Green"): editar("Green")
-            if c2.button("🔴 Red"): editar("Red")
-            if c3.button("🟡 Push"): editar("Push")
+            st.subheader("🎯 Controle de Resultados (Local)")
+            c1, c2, c3, c4 = st.columns(4)
+            if c1.button("🟢 Green"): st.success("Green registrado!")
+            if c2.button("🔴 Red"): st.error("Red registrado!")
+            if c3.button("🟡 Push"): st.warning("Push registrado!")
+            if c4.button("⚪ Resetar"): st.session_state.executado = False; st.session_state.msg_id = None; st.rerun()
     else:
-        st.warning(f"⚠️ Nenhuma aposta recomendada (Probabilidade atual: {prob_calculada}% | Mínimo exigido: 55%)")
+        st.warning(f"⚠️ Nenhuma aposta recomendada (Probabilidade atual: {prob_calculada}% | Mínimo: 55%)")
