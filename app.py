@@ -1,47 +1,71 @@
 import streamlit as st
-import re
 import requests
-import json
+import re
 import pandas as pd
 
 st.set_page_config(page_title="Robô Brazukas", layout="wide")
+st.title("🤖 Painel Brazukas - Decisão e Envio")
 
-# --- SIDEBAR (Entradas) ---
-st.sidebar.header("🛠️ Configurações")
-token = st.sidebar.text_input("🔑 Token Telegram:", type="password")
-chat_id = st.sidebar.text_input("📢 ID Canal:", type="password")
+# --- SIDEBAR: DADOS E ODDS ---
+st.sidebar.header("⚙️ Configurações")
+token = st.sidebar.text_input("Token Telegram", type="password")
+chat_id = st.sidebar.text_input("ID Canal")
 
 st.sidebar.header("📅 Dados do Jogo")
-campeonato = st.sidebar.text_input("🏆 Campeonato:", "Brasileirão")
-time_casa = st.sidebar.text_input("🆚 Time Casa:", "Cruzeiro")
-time_visitante = st.sidebar.text_input("🆚 Time Visitante:", "Fluminense")
-horario = st.sidebar.text_input("⏰ Horário:", "16h00")
+campeonato = st.sidebar.text_input("Campeonato")
+time_casa = st.sidebar.text_input("Time Casa")
+time_visitante = st.sidebar.text_input("Time Visitante")
+horario = st.sidebar.text_input("Horário")
+favorito = st.sidebar.selectbox("Favorito", ["Casa", "Visitante", "Nenhum / Equilibrado"])
 
 st.sidebar.header("📊 Odds")
-odd_casa = st.sidebar.number_input("Odd Casa:", 1.0)
-odd_visitante = st.sidebar.number_input("Odd Fora:", 1.0)
-odd_o15 = st.sidebar.number_input("Odd O1.5:", 1.0)
-odd_btts = st.sidebar.number_input("Odd BTTS:", 1.0)
-odd_o25 = st.sidebar.number_input("Odd O2.5:", 1.0)
+odd_casa = st.sidebar.number_input("Odd Casa", 1.0)
+odd_visitante = st.sidebar.number_input("Odd Visitante", 1.0)
+odd_o15 = st.sidebar.number_input("Odd O1.5", 1.0)
+odd_btts = st.sidebar.number_input("Odd BTTS", 1.0)
+odd_o25 = st.sidebar.number_input("Odd O2.5", 1.0)
 
-# --- CORPO (Dados estatísticos) ---
-st.header("📋 Dados e Análise")
-lista_jogos = st.text_area("Cole a lista aqui (Últimos jogos / Confrontos diretos):", height=200)
-resultado_aposta = st.selectbox("🎯 Resultado da Aposta:", ["Nenhum", "Green", "Red", "Push"])
+# --- CORPO: DADOS ESTATÍSTICOS ---
+lista_jogos = st.text_area("📋 Cole aqui a lista de jogos (formato estatístico):", height=200)
 
-if st.button("🚀 Processar e Enviar"):
-    if not lista_jogos:
-        st.warning("Por favor, cole os dados estatísticos.")
+# --- MEMÓRIA ---
+if "msg_id" not in st.session_state: st.session_state.msg_id = None
+if "ultima_msg" not in st.session_state: st.session_state.ultima_msg = ""
+
+if st.button("🚀 Analisar e Enviar Sinal"):
+    # Lógica de Cálculo (Simplificada para o Streamlit processar)
+    # Aqui você pode inserir a sua lógica de extração de gols que já usa
+    
+    # Exemplo de decisão baseada nos campos da sidebar:
+    if odd_o25 < 2.10:
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {time_casa} x {time_visitante}\n🎯 *Mercado:* Over 2.5 FT\n⏰ *Horário:* {horario}\n\n📌 Entrada recomendada!"
     else:
-        # Aqui entra a lógica de cálculo que você já tem (extrair_dados_estatisticos)
-        # O Streamlit vai processar e exibir abaixo
-        st.success("Análise processada com sucesso!")
-        
-        # Exemplo de lógica de selo para o Telegram
-        if resultado_aposta == "Green": selo = "\n\n✅✅ *GREEN!!* ✅✅"
-        elif resultado_aposta == "Red": selo = "\n\n❌❌ *RED!* ❌❌"
-        elif resultado_aposta == "Push": selo = "\n\n🔄🔄 *DEVOLVIDA* 🔄🔄"
-        else: selo = ""
-        
-        st.write(f"Resultado escolhido: {resultado_aposta}")
-        # AQUI você chamaria suas funções de enviar/editar para o Telegram
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {time_casa} x {time_visitante}\n🎯 *Mercado:* Match Odds (LTD)\n⭐ *Favorito:* {favorito}\n⏰ *Horário:* {horario}\n\n📌 Entrada recomendada!"
+    
+    # Envio
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+    resp = requests.post(url, data=payload).json()
+    
+    if resp.get("ok"):
+        st.session_state.msg_id = resp["result"]["message_id"]
+        st.session_state.ultima_msg = msg
+        st.success("Sinal enviado!")
+    else:
+        st.error(f"Erro: {resp.get('description')}")
+
+# --- ATUALIZAÇÃO ---
+if st.session_state.msg_id:
+    st.subheader("🎯 Resultado")
+    col1, col2, col3 = st.columns(3)
+    
+    def atualizar(status_texto):
+        nova_msg = st.session_state.ultima_msg + f"\n\n🔄 *Status:* {status_texto}"
+        url = f"https://api.telegram.org/bot{token}/editMessageText"
+        payload = {"chat_id": chat_id, "message_id": st.session_state.msg_id, "text": nova_msg, "parse_mode": "Markdown"}
+        requests.post(url, data=payload)
+        st.success("Atualizado!")
+
+    if col1.button("✅ GREEN"): atualizar("✅✅ GREEN!!")
+    if col2.button("❌ RED"): atualizar("❌❌ RED!")
+    if col3.button("🔄 DEVOLVIDA"): atualizar("🔄🔄 DEVOLVIDA")
