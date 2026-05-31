@@ -7,7 +7,7 @@ st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
 # --- ESTADO ---
 if "executado" not in st.session_state: st.session_state.executado = False
 
-# --- SIDEBAR COMPLETA ---
+# --- SIDEBAR ---
 st.sidebar.header("🤖 CONFIGURAÇÃO")
 token = st.sidebar.text_input("🔑 Token:", type="password")
 chat_id = st.sidebar.text_input("📢 ID Canal:", type="password")
@@ -18,50 +18,40 @@ time_casa = st.sidebar.text_input("🆚 Time Casa:")
 time_visitante = st.sidebar.text_input("🆚 Time Visitante:")
 horario = st.sidebar.text_input("⏰ Horário:")
 
-st.sidebar.header("📊 ODDS (Para Cálculo)")
-# Campos adicionados conforme solicitado
-odd_casa = st.sidebar.number_input("Odd Time Casa:", value=1.0, step=0.01)
-odd_visitante = st.sidebar.number_input("Odd Time Visitante:", value=1.0, step=0.01)
-odd_o15 = st.sidebar.number_input("Odd Over 1.5:", value=1.0, step=0.01)
-odd_o25 = st.sidebar.number_input("Odd Over 2.5:", value=1.0, step=0.01)
-odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.0, step=0.01)
-
 # --- CORPO ---
-st.subheader("📋 Dados Estatísticos")
-# Cole a lista de jogos AQUI no seu navegador
-lista_jogos = st.text_area("Cole a lista aqui:", height=150)
+st.subheader("📋 Definição de Entrada")
+tipo_entrada = st.selectbox("Escolha o modelo de sinal:", 
+    ["Contra o Empate (LTD)", "BTTS (Ambas Marcam)", "Casa Vence", "Over 1.5 FT", "Over 2.5 FT"])
 
-if st.button("▶️ EXECUTAR ANÁLISE"):
-    if lista_jogos:
-        st.session_state.executado = True
-    else:
-        st.warning("Cole a lista de jogos no campo acima primeiro!")
-
-if st.session_state.executado:
-    # MENSAGEM SEGUINDO SEU PADRÃO
-    msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
-           f"🏆 *Campeonato:* {campeonato}\n"
-           f"🆚 *Jogo:* {time_casa} x {time_visitante}\n"
-           f"🎯 *Mercado Principal:* Over 2.5 FT\n"
-           f"⚽ *Mercado Secundário (Escanteios):* Analisar ao vivo\n"
-           f"⏰ *Horário:* {horario}\n"
-           f"⚠️ *Alerta de Entrada:* Entrada recomendada!")
+def gerar_mensagem(tipo):
+    base = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {time_casa} x {time_visitante}\n"
+    rodape = "\n\n⚠️ Aposte com responsabilidade. Não há garantias de lucro."
     
-    st.code(msg)
-    
-    if st.button("🚀 Enviar Sinal"):
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        params = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-        resp = requests.get(url, params=params).json()
-        if resp.get("ok"):
-            st.success("Sinal enviado!")
-        else:
-            st.error(f"Erro: {resp.get('description')}")
+    if tipo == "Contra o Empate (LTD)":
+        return base + "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Contra o Empate (LTD)\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada Ao vivo!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição LTD." + rodape
+    elif tipo == "BTTS (Ambas Marcam)":
+        return base + "🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas - SIM\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição Ambas Sim." + rodape
+    elif tipo == "Casa Vence":
+        return base + "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Casa Vence\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Essa é uma entrada para FT (Full Time)." + rodape
+    elif tipo == "Over 1.5 FT":
+        return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 1.5 FT\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça no Over 1.5 FT." + rodape
+    elif tipo == "Over 2.5 FT":
+        return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 2.5 FT\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 2 gols no HT, sugiro que saia do mercado com um pequeno lucro.\n* Essa é uma entrada para FT (Full Time)." + rodape
 
-    # CONTROLE DE RESULTADOS
-    st.subheader("🎯 Registrar Resultado")
-    c1, c2, c3, c4 = st.columns(4)
-    if c1.button("🟢 Green"): st.success("Green registrado!")
-    if c2.button("🔴 Red"): st.error("Red registrado!")
-    if c3.button("🟡 Push"): st.warning("Push registrado!")
-    if c4.button("⚪ Resetar"): st.session_state.executado = False; st.rerun()
+msg = gerar_mensagem(tipo_entrada)
+st.code(msg)
+
+if st.button("🚀 Enviar para o Telegram"):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    params = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+    resp = requests.get(url, params=params).json()
+    if resp.get("ok"): st.success("Sinal enviado!")
+    else: st.error(f"Erro: {resp.get('description')}")
+
+# CONTROLE DE RESULTADOS
+st.subheader("🎯 Controle Interno")
+c1, c2, c3, c4 = st.columns(4)
+if c1.button("🟢 Green"): st.success("Green registrado!")
+if c2.button("🔴 Red"): st.error("Red registrado!")
+if c3.button("🟡 Push"): st.warning("Push registrado!")
+if c4.button("⚪ Resetar"): st.rerun()
