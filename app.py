@@ -1,55 +1,55 @@
 import streamlit as st
+import re
 import requests
 
-st.set_page_config(page_title="Robô Brazukas", layout="wide")
-st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
+st.set_page_config(page_title="Robô Brazukas - Autônomo", layout="wide")
+st.title("🤖 Robô Brazukas - Decisão Autônoma")
 
-# --- ESTADO ---
-if "msg_id" not in st.session_state: st.session_state.msg_id = None
+# --- SIDEBAR (CONFIGURAÇÃO E ODDS) ---
+st.sidebar.header("🔑 Configurações")
+token = st.sidebar.text_input("Token Telegram:", type="password")
+chat_id = st.sidebar.text_input("ID Canal:", type="password")
 
-# --- SIDEBAR (CONFIGURAÇÃO) ---
-token = st.sidebar.text_input("🔑 Token:", type="password")
-chat_id = st.sidebar.text_input("📢 ID Canal:", type="password")
-campeonato = st.sidebar.text_input("🏆 Campeonato:")
-time_casa = st.sidebar.text_input("🆚 Time Casa:")
-time_visitante = st.sidebar.text_input("🆚 Time Visitante:")
-horario = st.sidebar.text_input("⏰ Horário:")
+st.sidebar.header("📊 ODDS Atuais")
+odd_casa = st.sidebar.number_input("Odd Casa:", value=2.0)
+odd_fora = st.sidebar.number_input("Odd Fora:", value=3.0)
+odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.8)
 
-# --- DADOS PARA CÁLCULO ---
-st.sidebar.header("📊 Dados para Cálculo")
-media_gols = st.sidebar.number_input("Média de Gols no Confronto:", value=2.5)
-prob_btts = st.sidebar.number_input("Probabilidade BTTS (%):", value=60)
+# --- CORPO ---
+lista_jogos = st.text_area("Cole a lista de histórico aqui:", height=200)
 
-# --- FUNÇÃO DO MOTOR DE DECISÃO ---
-def determinar_entrada(media, prob):
-    if media >= 2.5 and prob >= 65:
-        return "Over 2.5 FT"
-    elif prob >= 60:
-        return "BTTS (Ambas Marcam)"
-    elif media >= 2.0:
-        return "Over 1.5 FT"
-    else:
-        return "Contra o Empate (LTD)"
-
-# --- LÓGICA ---
-if st.button("▶️ ANALISAR E DECIDIR"):
-    entrada_escolhida = determinar_entrada(media_gols, prob_btts)
-    st.success(f"O robô decidiu a entrada: **{entrada_escolhida}**")
+def analisar_dados(texto):
+    # Procura todos os pares de números (gols) no formato "X-Y" ou "X Y"
+    gols = re.findall(r'(\d+)\s*[-:]\s*(\d+)', texto)
+    if not gols: return 0, 0
     
-    # Monta a mensagem baseada na escolha
-    def formatar_msg(tipo):
-        base = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {campeonato}\n🆚 *Jogo:* {time_casa} x {time_visitante}\n"
-        if tipo == "Over 2.5 FT": return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 2.5 FT\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 2 gols no HT, saia com lucro.\n* Entrada para FT."
-        if tipo == "BTTS (Ambas Marcam)": return base + "🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas - SIM\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, saia com lucro."
-        if tipo == "Over 1.5 FT": return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 1.5 FT\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, saia com lucro."
-        return base + "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Contra o Empate (LTD)\n⏰ *Horário:* " + horario + "\n\n📌 Entrada recomendada Ao vivo!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, saia com lucro."
+    total_gols = sum(int(g[0]) + int(g[1]) for g in gols)
+    btts_count = sum(1 for g in gols if int(g[0]) > 0 and int(g[1]) > 0)
+    
+    media = total_gols / len(gols)
+    prob_btts = (btts_count / len(gols)) * 100
+    return media, prob_btts
 
-    msg = formatar_msg(entrada_escolhida)
-    st.code(msg)
-    st.session_state.msg_final = msg
-
-# --- ENVIO E CONTROLE ---
-if "msg_final" in st.session_state:
-    if st.button("🚀 Enviar Sinal"):
-        # Lógica de envio (mesma de antes)
-        st.success("Enviado!")
+if st.button("🚀 ANALISAR E ENVIAR"):
+    media, prob_btts = analisar_dados(lista_jogos)
+    
+    # LÓGICA DE DECISÃO DO ROBÔ
+    if media >= 2.8 and odd_btts <= 1.90:
+        tipo = "BTTS (Ambas Marcam)"
+    elif media >= 2.5:
+        tipo = "Over 2.5 FT"
+    elif media >= 1.8:
+        tipo = "Over 1.5 FT"
+    elif odd_casa < odd_fora:
+        tipo = "Casa Vence"
+    else:
+        tipo = "Contra o Empate (LTD)"
+        
+    st.write(f"📊 **Dados extraídos:** Média {media:.2f} | Prob. BTTS {prob_btts:.0f}%")
+    st.success(f"O robô decidiu pela estratégia: **{tipo}**")
+    
+    # MENSAGEM (O robô monta baseado na decisão)
+    msg = f"🚨 *Alerta de Entrada* 🚨\n\n🎯 *Mercado:* {tipo}\n..." # (Aqui entram seus modelos)
+    
+    # Envio Automático
+    # ... (código de request.get para o Telegram)
