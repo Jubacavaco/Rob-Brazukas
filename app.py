@@ -14,10 +14,15 @@ st.sidebar.header("🤖 CONFIGURAÇÃO")
 token = st.sidebar.text_input("🔑 Token do Bot:", type="password")
 chat_id = st.sidebar.text_input("📢 ID do Canal (Oculto):", type="password")
 st.sidebar.markdown("---")
+
+st.sidebar.header("📅 DADOS DO JOGO")
 campeonato = st.sidebar.text_input("🏆 Campeonato:", "Brasileirão")
 time_casa = st.sidebar.text_input("🆚 Time Casa:", "Cruzeiro")
 time_visitante = st.sidebar.text_input("🆚 Time Visitante:", "Fluminense")
 horario = st.sidebar.text_input("⏰ Horário:", "16h00")
+
+# A OPÇÃO QUE FALTAVA
+favorito = st.sidebar.selectbox("👑 Favorito:", ["Nenhum / Equilibrado", "Casa", "Visitante"])
 
 # --- CORPO: Entrada de dados ---
 st.subheader("📋 Dados Estatísticos")
@@ -30,7 +35,7 @@ if st.button("▶️ EXECUTAR ANÁLISE", type="primary"):
     else:
         st.warning("Por favor, cole os dados na caixa de texto primeiro!")
 
-# --- RESULTADOS (Aparece após clicar em Executar) ---
+# --- RESULTADOS ---
 if st.session_state.executado:
     st.markdown("---")
     st.subheader("🎯 Controle de Resultados")
@@ -44,13 +49,13 @@ if st.session_state.executado:
         st.session_state.res = "Nenhum"
         st.rerun()
     
-    # Exibe o status atual
     selo = f"\n\n👉 *Resultado:* {st.session_state.res}" if st.session_state.res != "Nenhum" else ""
     
-    # Monta a mensagem
+    # Monta a mensagem incluindo o favorito
     msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
            f"🏆 *Campeonato:* {campeonato}\n"
            f"🆚 *Jogo:* {time_casa} x {time_visitante}\n"
+           f"👑 *Favorito:* {favorito}\n"
            f"⏰ *Horário:* {horario}\n"
            f"{selo}")
     
@@ -64,7 +69,7 @@ if st.session_state.executado:
             try:
                 resp = requests.post(url, data=payload)
                 if resp.status_code == 200:
-                    st.success("Sinal enviado com sucesso ao Telegram!")
+                    st.success("Sinal enviado com sucesso!")
                 else:
                     st.error(f"Erro ao enviar: {resp.text}")
             except Exception as e:
