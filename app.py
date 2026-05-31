@@ -7,48 +7,71 @@ st.title("🚨 Painel de Controle - Robô Brazukas 🚨")
 # --- ESTADO ---
 if "executado" not in st.session_state: st.session_state.executado = False
 if "res" not in st.session_state: st.session_state.res = "Nenhum"
-if "msg_id" not in st.session_state: st.session_state.msg_id = None # ID para editar mensagem no Telegram
+if "msg_id" not in st.session_state: st.session_state.msg_id = None
 
-# --- SIDEBAR ---
+# --- SIDEBAR COMPLETA ---
 st.sidebar.header("🤖 CONFIGURAÇÃO")
 token = st.sidebar.text_input("🔑 Token:", type="password")
 chat_id = st.sidebar.text_input("📢 ID Canal:", type="password")
+
+st.sidebar.header("📅 DADOS DO JOGO")
+campeonato = st.sidebar.text_input("🏆 Campeonato:", "Brasileirão")
+time_casa = st.sidebar.text_input("🆚 Time Casa:", "Cruzeiro")
+time_visitante = st.sidebar.text_input("🆚 Time Visitante:", "Fluminense")
+horario = st.sidebar.text_input("⏰ Horário:", "16h00")
 favorito = st.sidebar.selectbox("👑 Favorito:", ["Equilibrado", "Casa", "Visitante"])
 
-# --- LÓGICA DE ENVIO/EDIÇÃO ---
-def enviar_ou_editar(msg, is_edit=False):
-    url = f"https://api.telegram.org/bot{token}/"
-    if is_edit and st.session_state.msg_id:
-        url += f"editMessageText?chat_id={chat_id}&message_id={st.session_state.msg_id}&text={msg}&parse_mode=Markdown"
-        requests.get(url)
-    else:
-        url += f"sendMessage?chat_id={chat_id}&text={msg}&parse_mode=Markdown"
-        resp = requests.get(url).json()
-        if resp.get("ok"): st.session_state.msg_id = resp["result"]["message_id"]
+st.sidebar.header("📊 ODDS")
+odd_o15 = st.sidebar.number_input("Odd Over 1.5:", value=1.30, step=0.01)
+odd_o25 = st.sidebar.number_input("Odd Over 2.5:", value=2.00, step=0.01)
+odd_btts = st.sidebar.number_input("Odd BTTS:", value=1.90, step=0.01)
 
 # --- CORPO ---
-lista_jogos = st.text_area("Cole os dados aqui:", height=150, key="caixa_texto")
+st.subheader("📋 Dados Estatísticos")
+lista_jogos = st.text_area("Cole a lista aqui:", height=150, key="caixa_texto")
 
+# --- LÓGICA ---
 if st.button("▶️ EXECUTAR ANÁLISE"):
-    st.session_state.executado = True
-    st.session_state.res = "Nenhum"
-    st.session_state.msg_id = None
+    if st.session_state.caixa_texto:
+        st.session_state.executado = True
+        st.session_state.msg_id = None
+    else:
+        st.warning("Cole a lista de jogos primeiro!")
 
 if st.session_state.executado:
-    # SIMULAÇÃO DE CÁLCULO (Aqui entram os seus ifs de probabilidade)
-    prob = 50 # Exemplo: imagine que seu cálculo deu 50%
-    if prob >= 55:
-        recomendacao = "Over 2.5 FT"
-        msg = f"🚨 *Alerta:* {recomendacao}\n👑 *Favorito:* {favorito}\n👉 *Status:* {st.session_state.res}"
+    # AQUI ENTRARIA SEU CÁLCULO (Simulação do motor)
+    prob_calculada = 60 # Exemplo: 60%
+    
+    if prob_calculada >= 55:
+        msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+               f"🏆 {campeonato} | {horario}\n"
+               f"🆚 {time_casa} x {time_visitante}\n"
+               f"👑 Favorito: {favorito}\n"
+               f"💰 *Aposta:* Over 2.5 FT\n"
+               f"👉 *Status:* {st.session_state.res}")
+        
         st.code(msg)
-        if st.button("🚀 Enviar Sinal"): enviar_ou_editar(msg)
-    else:
-        st.warning(f"⚠️ Nenhuma entrada recomendada (Probabilidade atual: {prob}% | Mínimo: 55%)")
+        
+        # Botões de Envio e Edição
+        if not st.session_state.msg_id:
+            if st.button("🚀 Enviar Sinal"):
+                url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={msg}&parse_mode=Markdown"
+                resp = requests.get(url).json()
+                if resp.get("ok"): st.session_state.msg_id = resp["result"]["message_id"]
+        
+        if st.session_state.msg_id:
+            st.subheader("🎯 Atualizar Resultado")
+            c1, c2, c3 = st.columns(3)
+            def editar(novo_status):
+                st.session_state.res = novo_status
+                msg_edit = msg.replace("👉 *Status*: Nenhum", f"👉 *Status*: {novo_status}")
+                url = f"https://api.telegram.org/bot{token}/editMessageText?chat_id={chat_id}&message_id={st.session_state.msg_id}&text={msg_edit}&parse_mode=Markdown"
+                requests.get(url)
+                st.rerun()
 
-    # --- CONTROLE DE RESULTADOS ---
-    if st.session_state.msg_id:
-        st.subheader("🎯 Atualizar Resultado no Telegram")
-        c1, c2, c3 = st.columns(3)
-        if c1.button("🟢 Green"): st.session_state.res = "Green"; enviar_ou_editar(msg.replace("Nenhum", "Green"), True)
-        if c2.button("🔴 Red"): st.session_state.res = "Red"; enviar_ou_editar(msg.replace("Nenhum", "Red"), True)
-        if c3.button("🟡 Push"): st.session_state.res = "Push"; enviar_ou_editar(msg.replace("Nenhum", "Push"), True)
+            if c1.button("🟢 Green"): editar("Green")
+            if c2.button("🔴 Red"): editar("Red")
+            if c3.button("🟡 Push"): editar("Push")
+    else:
+        st.warning(f"⚠️ Nenhuma aposta recomendada (Probabilidade atual: {prob_calculada}% | Mínimo exigido: 55%)")
+        
