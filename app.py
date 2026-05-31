@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import requests
 import pandas as pd
@@ -10,104 +9,71 @@ st.set_page_config(page_title="Painel de Análise Híbrida PRO", page_icon="⚽"
 st.title("🏆 Painel Automatizado de Entradas de Futebol")
 st.markdown("Busque dados diretamente da API-Football, calcule as probabilidades híbridas e envie para o Telegram com 1 clique.")
 
-# --- SIDEBAR: CHAVES E AUTENTICAÇÕES ---
+# --- SIDEBAR ---
 st.sidebar.header("🛠️ Configurações e Chaves")
 
-# CHAVES E CREDENCIAIS
 TOKEN_TELEGRAM_PADRAO = "SEU_TOKEN"
 CHAT_ID_TELEGRAM_PADRAO = "SEU_CHAT_ID"
-CHAVE_RAPIDAPI_PADRAO = "SUA_CHAVE_RAPIDAPI"
+CHAVE_RAPIDAPI_PADRAO = "SUA_CHAVE"
 
 token_telegram = st.sidebar.text_input(
-    "Token do Bot Telegram",
+    "Token Telegram",
     value=TOKEN_TELEGRAM_PADRAO,
     type="password"
 )
 
 chat_telegram = st.sidebar.text_input(
-    "ID do Canal Telegram",
+    "Chat ID",
     value=CHAT_ID_TELEGRAM_PADRAO
 )
 
 chave_rapidapi = st.sidebar.text_input(
-    "X-RapidAPI-Key (Chave API-Football)",
+    "RapidAPI Key",
     value=CHAVE_RAPIDAPI_PADRAO,
     type="password"
 )
 
-# --- BLOCO 1: FORMULÁRIO ---
-st.header("📅 Informações do Confronto & Preços do Mercado")
+# --- FORMULÁRIO ---
+st.header("📅 Informações do Jogo")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
     campeonato = st.text_input("Campeonato", "LaLiga 2")
-    id_time_casa = st.number_input(
-        "ID Time Casa (na API)",
-        min_value=1,
-        value=541
-    )
+    id_time_casa = st.number_input("ID Time Casa", min_value=1, value=541)
 
 with col2:
-    horario_jogo = st.text_input("Horário do Jogo", "16h00 (BR)")
-    id_time_visitante = st.number_input(
-        "ID Time Visitante (na API)",
-        min_value=1,
-        value=532
-    )
+    horario_jogo = st.text_input("Horário", "16h00")
+    id_time_visitante = st.number_input("ID Time Visitante", min_value=1, value=532)
 
 with col3:
     escolha_favorito = st.selectbox(
-        "Determinar Favorito",
+        "Favorito",
         ["Casa", "Visitante", "Nenhum / Equilibrado"]
     )
 
-st.markdown("#### 📊 Odds Atuais da Casa de Apostas")
+st.markdown("### 📊 Odds")
 
 col_o1, col_o2, col_o3, col_o4, col_o5 = st.columns(5)
 
 with col_o1:
-    odd_casa = st.number_input(
-        "Odd Casa",
-        min_value=1.01,
-        value=1.95,
-        step=0.01
-    )
+    odd_casa = st.number_input("Odd Casa", min_value=1.01, value=1.95)
 
 with col_o2:
-    odd_visitante = st.number_input(
-        "Odd Visitante",
-        min_value=1.01,
-        value=3.60,
-        step=0.01
-    )
+    odd_visitante = st.number_input("Odd Visitante", min_value=1.01, value=3.60)
 
 with col_o3:
-    odd_o15 = st.number_input(
-        "Odd Over 1.5 FT",
-        min_value=1.01,
-        value=1.35,
-        step=0.01
-    )
+    odd_o15 = st.number_input("Odd Over 1.5", min_value=1.01, value=1.35)
 
 with col_o4:
-    odd_o25 = st.number_input(
-        "Odd Over 2.5 FT",
-        min_value=1.01,
-        value=2.10,
-        step=0.01
-    )
+    odd_o25 = st.number_input("Odd Over 2.5", min_value=1.01, value=2.10)
 
 with col_o5:
-    odd_btts = st.number_input(
-        "Odd BTTS Sim",
-        min_value=1.01,
-        value=1.85,
-        step=0.01
-    )
+    odd_btts = st.number_input("Odd BTTS", min_value=1.01, value=1.85)
 
 
 def enviar_telegram(texto):
+
     url = f"https://api.telegram.org/bot{token_telegram}/sendMessage"
 
     payload = {
@@ -123,327 +89,193 @@ def enviar_telegram(texto):
         return False
 
 
-if st.button("🚀 Executar Análise Híbrida via API", type="primary"):
+if st.button("🚀 Executar Análise"):
 
-    if not chave_rapidapi:
-        st.error("🚨 Insira uma chave válida da RapidAPI.")
-    else:
+    url_api = "https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead"
 
-        with st.spinner("Consultando API-Football..."):
+    querystring = {
+        "h2h": f"{id_time_casa}-{id_time_visitante}",
+        "last": "10"
+    }
 
-            url_api = "https://api-football-v1.p.rapidapi.com/v3/fixtures/headtohead"
+    headers = {
+        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com",
+        "X-RapidAPI-Key": chave_rapidapi
+    }
 
-            querystring = {
-                "h2h": f"{id_time_casa}-{id_time_visitante}",
-                "last": "10"
-            }
+    try:
 
-            headers = {
-                "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com",
-                "X-RapidAPI-Key": chave_rapidapi
-            }
+        response = requests.get(
+            url_api,
+            headers=headers,
+            params=querystring
+        )
 
-            try:
+        dados_api = response.json()
 
-                response = requests.get(
-                    url_api,
-                    headers=headers,
-                    params=querystring
-                )
+        if len(dados_api["response"]) == 0:
+            st.error("Nenhum confronto encontrado.")
 
-                dados_api = response.json()
+        else:
 
-                if (
-                    "response" not in dados_api
-                    or len(dados_api["response"]) == 0
-                ):
-                    st.error("❌ Nenhum jogo encontrado.")
-                else:
+            nome_casa = dados_api["response"][0]["teams"]["home"]["name"]
+            nome_visitante = dados_api["response"][0]["teams"]["away"]["name"]
 
-                    nome_casa = dados_api["response"][0]["teams"]["home"]["name"]
-                    nome_visitante = dados_api["response"][0]["teams"]["away"]["name"]
+            gols_total = []
+            btts_lista = []
+            empates = 0
 
-                    gols_total_confrontos = []
-                    btts_confrontos = []
-                    empates_contagem = 0
+            for game in dados_api["response"]:
 
-                    for game in dados_api["response"]:
+                g_home = game["goals"]["home"]
+                g_away = game["goals"]["away"]
 
-                        g_home = game["goals"]["home"]
-                        g_away = game["goals"]["away"]
+                if g_home is not None and g_away is not None:
 
-                        if g_home is not None and g_away is not None:
+                    total = g_home + g_away
 
-                            total_gols = g_home + g_away
+                    gols_total.append(total)
 
-                            gols_total_confrontos.append(total_gols)
+                    btts_lista.append(
+                        g_home > 0 and g_away > 0
+                    )
 
-                            btts_confrontos.append(
-                                g_home > 0 and g_away > 0
-                            )
+                    if g_home == g_away:
+                        empates += 1
 
-                            if g_home == g_away:
-                                empates_contagem += 1
+            total_jogos = len(gols_total)
 
-                    total_jogos_validos = len(gols_total_confrontos)
+            p_o15_lista = (
+                sum(1 for g in gols_total if g > 1.5)
+                / total_jogos
+            ) * 100
 
-                    if total_jogos_validos == 0:
-                        st.error("❌ Jogos sem dados completos.")
-                    else:
+            p_o25_lista = (
+                sum(1 for g in gols_total if g > 2.5)
+                / total_jogos
+            ) * 100
 
-                        p_o15_lista = (
-                            sum(
-                                1 for g in gols_total_confrontos
-                                if g > 1.5
-                            ) / total_jogos_validos
-                        ) * 100
+            p_btts_lista = (
+                sum(1 for b in btts_lista if b)
+                / total_jogos
+            ) * 100
 
-                        p_o25_lista = (
-                            sum(
-                                1 for g in gols_total_confrontos
-                                if g > 2.5
-                            ) / total_jogos_validos
-                        ) * 100
+            prob_ltd_lista = (
+                (total_jogos - empates)
+                / total_jogos
+            ) * 100
 
-                        p_btts_lista = (
-                            sum(
-                                1 for b in btts_confrontos
-                                if b
-                            ) / total_jogos_validos
-                        ) * 100
+            p_o15_odd = (1 / odd_o15) * 100
+            p_o25_odd = (1 / odd_o25) * 100
+            p_btts_odd = (1 / odd_btts) * 100
 
-                        prob_ltd_lista = (
-                            (
-                                total_jogos_validos - empates_contagem
-                            ) / total_jogos_validos
-                        ) * 100
+            calc_odd_favorito = (
+                odd_casa
+                if odd_casa <= odd_visitante
+                else odd_visitante
+            )
 
-                        p_o15_odd = (1 / odd_o15) * 100
-                        p_o25_odd = (1 / odd_o25) * 100
-                        p_btts_odd = (1 / odd_btts) * 100
+            calc_odd_zebra = (
+                odd_visitante
+                if odd_casa <= odd_visitante
+                else odd_casa
+            )
 
-                        calc_odd_favorito = (
-                            odd_casa
-                            if odd_casa <= odd_visitante
-                            else odd_visitante
-                        )
+            p_ltd_odd = (
+                (1 / calc_odd_favorito)
+                + (1 / calc_odd_zebra)
+            ) * 100
 
-                        calc_odd_zebra = (
-                            odd_visitante
-                            if odd_casa <= odd_visitante
-                            else odd_casa
-                        )
+            if p_ltd_odd > 100:
+                p_ltd_odd = 99
 
-                        p_ltd_odd = (
-                            (1 / calc_odd_favorito)
-                            + (1 / calc_odd_zebra)
-                        ) * 100
+            p_o15 = (p_o15_lista + p_o15_odd) / 2
+            p_o25 = (p_o25_lista + p_o25_odd) / 2
+            p_btts = (p_btts_lista + p_btts_odd) / 2
+            prob_ltd = (prob_ltd_lista + p_ltd_odd) / 2
 
-                        if p_ltd_odd > 100:
-                            p_ltd_odd = 99
+            st.success("✅ Análise concluída")
 
-                        # MÉDIA HÍBRIDA
-                        p_o15 = (p_o15_lista + p_o15_odd) / 2
-                        p_o25 = (p_o25_lista + p_o25_odd) / 2
-                        p_btts = (p_btts_lista + p_btts_odd) / 2
-                        prob_ltd = (prob_ltd_lista + p_ltd_odd) / 2
+            st.metric("Over 1.5", f"{p_o15:.1f}%")
+            st.metric("Over 2.5", f"{p_o25:.1f}%")
+            st.metric("BTTS", f"{p_btts:.1f}%")
+            st.metric("LTD", f"{prob_ltd:.1f}%")
 
-                        st.success("✅ Análise concluída!")
+            fig, ax = plt.subplots()
 
-                        col_r1, col_r2 = st.columns(2)
+            mercados = [
+                "Over 1.5",
+                "Over 2.5",
+                "BTTS",
+                "LTD"
+            ]
 
-                        with col_r1:
+            valores = [
+                p_o15,
+                p_o25,
+                p_btts,
+                prob_ltd
+            ]
 
-                            st.subheader("📈 Probabilidades")
+            ax.bar(mercados, valores)
 
-                            st.metric(
-                                "Over 1.5 FT",
-                                f"{p_o15:.1f}%"
-                            )
+            st.pyplot(fig)
 
-                            st.metric(
-                                "Over 2.5 FT",
-                                f"{p_o25:.1f}%"
-                            )
+            # ALERTAS
 
-                            st.metric(
-                                "BTTS",
-                                f"{p_btts:.1f}%"
-                            )
+            if p_o25 >= 65:
 
-                            st.metric(
-                                "LTD",
-                                f"{prob_ltd:.1f}%"
-                            )
+                msg = f"""
+🚨 Alerta de Entrada 🚨
 
-                        with col_r2:
-
-                            st.subheader("📊 Gráfico")
-
-                            fig, ax = plt.subplots(figsize=(6, 4))
-
-                            mercados = [
-                                "Over 1.5",
-                                "Over 2.5",
-                                "BTTS",
-                                "LTD"
-                            ]
-
-                            valores = [
-                                p_o15,
-                                p_o25,
-                                p_btts,
-                                prob_ltd
-                            ]
-
-                            cores = [
-                                "#3498db",
-                                "#34495e",
-                                "#2ecc71",
-                                "#f1c40f"
-                            ]
-
-                            ax.bar(
-                                mercados,
-                                valores,
-                                color=cores,
-                                edgecolor="black"
-                            )
-
-                            ax.set_ylim(0, 110)
-                            ax.set_ylabel("Percentual (%)")
-
-                            st.pyplot(fig)
-
-                        st.header("⭐ Alertas Gerados")
-
-                        alertas_gerados = 0
-
-                        # OVER 2.5
-                        if p_o25 >= 65:
-
-                            msg = f"""
-🚨 *Alerta de Entrada* 🚨
-
-🏆 *Campeonato:* {campeonato}
-🆚 *Jogo:* {nome_casa} x {nome_visitante}
-
-🎯 *Mercado:* Over Gols
-💥 *Prognóstico:* Over 2.5 FT
-
-⏰ *Horário:* {horario_jogo}
-
-📌 Entrada recomendada antes do início!
+🏆 Campeonato: {campeonato}
+🆚 Jogo: {nome_casa} x {nome_visitante}
+🎯 Mercado: Over Gols
+💥 Prognóstico: Over 2.5 FT
+⏰ Horário: {horario_jogo}
 
 ⚠️ Aposte com responsabilidade.
 """
 
-                            st.text_area(
-                                "🟢 Over 2.5",
-                                msg,
-                                height=180
-                            )
+                st.text_area("Over 2.5", msg)
 
-                            if enviar_telegram(msg):
-                                st.toast("Mensagem enviada!")
+                enviar_telegram(msg)
 
-                            alertas_gerados += 1
+            if p_btts >= 55:
 
-                        # OVER 1.5
-                        elif p_o15 >= 75:
+                msg = f"""
+🚨 Alerta de Entrada 🚨
 
-                            msg = f"""
-🚨 *Alerta de Entrada* 🚨
-
-🏆 *Campeonato:* {campeonato}
-🆚 *Jogo:* {nome_casa} x {nome_visitante}
-
-🎯 *Mercado:* Over Gols
-💥 *Prognóstico:* Over 1.5 FT
-
-⏰ *Horário:* {horario_jogo}
-
-📌 Entrada recomendada antes do início!
+🏆 Campeonato: {campeonato}
+🆚 Jogo: {nome_casa} x {nome_visitante}
+🎯 Mercado: BTTS
+💥 Prognóstico: Ambas Marcam SIM
+⏰ Horário: {horario_jogo}
 
 ⚠️ Aposte com responsabilidade.
 """
 
-                            st.text_area(
-                                "🟢 Over 1.5",
-                                msg,
-                                height=180
-                            )
+                st.text_area("BTTS", msg)
 
-                            if enviar_telegram(msg):
-                                st.toast("Mensagem enviada!")
+                enviar_telegram(msg)
 
-                            alertas_gerados += 1
+            if prob_ltd >= 51:
 
-                        # BTTS
-                        if p_btts >= 55:
+                msg = f"""
+🚨 Alerta de Entrada 🚨
 
-                            msg = f"""
-🚨 *Alerta de Entrada* 🚨
-
-🏆 *Campeonato:* {campeonato}
-🆚 *Jogo:* {nome_casa} x {nome_visitante}
-
-🎯 *Mercado:* BTTS
-💥 *Prognóstico:* Ambas Marcam - SIM
-
-⏰ *Horário:* {horario_jogo}
-
-📌 Entrada recomendada antes do início!
+🏆 Campeonato: {campeonato}
+🆚 Jogo: {nome_casa} x {nome_visitante}
+🎯 Mercado: LTD
+💥 Prognóstico: Contra o Empate
+⏰ Horário: {horario_jogo}
 
 ⚠️ Aposte com responsabilidade.
 """
 
-                            st.text_area(
-                                "🟢 BTTS",
-                                msg,
-                                height=180
-                            )
+                st.text_area("LTD", msg)
 
-                            if enviar_telegram(msg):
-                                st.toast("Mensagem enviada!")
+                enviar_telegram(msg)
 
-                            alertas_gerados += 1
-
-                        # LTD
-                        if prob_ltd >= 51:
-
-                            msg = f"""
-🚨 *Alerta de Entrada* 🚨
-
-🏆 *Campeonato:* {campeonato}
-🆚 *Jogo:* {nome_casa} x {nome_visitante}
-
-🎯 *Mercado:* LTD
-💥 *Prognóstico:* Contra o Empate
-
-⏰ *Horário:* {horario_jogo}
-
-📌 Entrada recomendada antes do início!
-
-⚠️ Aposte com responsabilidade.
-"""
-
-                            st.text_area(
-                                "🟢 LTD",
-                                msg,
-                                height=180
-                            )
-
-                            if enviar_telegram(msg):
-                                st.toast("Mensagem LTD enviada!")
-
-                            alertas_gerados += 1
-
-                        if alertas_gerados == 0:
-                            st.warning(
-                                "⚠️ Nenhum mercado atingiu os critérios mínimos."
-                            )
-
-            except Exception as e:
-                st.error(f"Erro ao consultar API: {e}")
-```
+    except Exception as e:
+        st.error(f"Erro: {e}")
