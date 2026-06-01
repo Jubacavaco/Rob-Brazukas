@@ -25,7 +25,6 @@ def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Campos de entrada
         camp = st.text_input("Campeonato", key=f"c_{titulo}")
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
@@ -45,19 +44,18 @@ def renderizar_bloco(titulo):
             g1, g2 = st.columns(2)
             g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); g1.progress(min((p+5)/100, 1.0))
             g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); g2.progress(min(p/100, 1.0))
-            
             g3, g4 = st.columns(2)
             g3.write(f"BTTS ({min(p-10, 100):.0f}%)"); g3.progress(max(min((p-10)/100, 1.0), 0.0))
             g4.write(f"LTD ({min(100-p, 100):.0f}%)"); g4.progress(min((100-p)/100, 1.0))
 
-            # Escolha do Mercado
-            modo = st.radio(f"Como definir o mercado ({titulo})?", ["Deixar Sistema Analisar", "Escolher Manualmente"], key=f"modo_{titulo}")
+            # Sugestão Automática
+            sugestao = "Over 1.5 FT" if p >= 70 else "LTD"
+            st.success(f"💡 **Aposta Recomendada pelo Sistema:** {sugestao}")
             
-            if modo == "Deixar Sistema Analisar":
-                tipo = "Over 1.5 FT" if p >= 70 else "LTD"
-                st.info(f"💡 Aposta recomendada: {tipo}")
-            else:
-                tipo = st.selectbox("Escolha a Aposta:", ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+            # Tua escolha manual
+            tipo = st.selectbox(f"Selecione o Mercado para Enviar ({titulo}):", 
+                                ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
+                                key=f"sel_{titulo}")
             
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
             st.info(f"Prévia da mensagem:\n\n{msg}")
