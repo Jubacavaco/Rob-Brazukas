@@ -49,8 +49,6 @@ def renderizar_bloco(titulo):
         
         if sugestao != "Nenhum mercado recomendado":
             st.success(f"🎯 Sugestão: {sugestao}")
-        else:
-            st.warning("⚠️ Nenhum mercado recomendado")
         
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
@@ -77,31 +75,37 @@ def renderizar_bloco(titulo):
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                 st.session_state[f"msg_base_{titulo}"] = msg_base
-                st.session_state[f"historico_placar_{titulo}"] = "" # Inicia histórico vazio
                 st.success("Enviado!")
 
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         
-        def atualizar_telegram(status, novo_texto):
+        def atualizar_telegram(status, modo):
             msg_id = st.session_state[f"id_{titulo}"]
             msg_base = st.session_state.get(f"msg_base_{titulo}", "")
             
-            # Atualiza o histórico mantendo o que já foi escrito
-            if novo_texto not in st.session_state[f"historico_placar_{titulo}"]:
-                st.session_state[f"historico_placar_{titulo}"] += f"\n⚽ {novo_texto}"
+            # Lógica de substituição
+            if modo == "MOMENTO":
+                txt_placar = f"\n⚽ Momento: {pm}"
+            elif modo == "HT":
+                txt_placar = f"\n⚽ HT: {pht}"
+            elif modo == "FINAL":
+                # Mantém o HT e adiciona o Final
+                txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
+            else:
+                txt_placar = "\n❌ Resultado: RED"
             
-            txt = f"{msg_base}{st.session_state[f'historico_placar_{titulo}']}\n\n🔄 STATUS ATUAL: *{status}*"
+            txt = f"{msg_base}{txt_placar}\n\n🔄 STATUS ATUAL: *{status}*"
             
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
             st.success(f"Atualizado: {status}")
 
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢", f"Momento: {pm}")
-        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢", f"HT: {pht}")
-        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", f"Final: {pf}")
-        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "Resultado: RED")
+        if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢", "MOMENTO")
+        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢", "HT")
+        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
+        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
