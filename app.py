@@ -24,10 +24,13 @@ def calcular_probabilidade(texto):
 def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
+        
+        # Campos de entrada
         camp = st.text_input("Campeonato", key=f"c_{titulo}")
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
+        placar = st.text_input("Placar Final (para Green/Red)", key=f"p_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
@@ -36,8 +39,17 @@ def renderizar_bloco(titulo):
         
         if f"prob_{titulo}" in st.session_state:
             p = st.session_state[f"prob_{titulo}"]
-            mercado = st.selectbox(f"Mercado ({titulo})", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Prob:* {p:.1f}%\n⏰ *Horário:* {hora}"
+            
+            # Gráficos de Probabilidade
+            st.write("📊 **Mercados:**")
+            c_g1, c_g2 = st.columns(2)
+            c_g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); c_g1.progress(min((p+5)/100, 1.0))
+            c_g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); c_g2.progress(min(p/100, 1.0))
+            
+            mercado = st.selectbox(f"Mercado ({titulo})", ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+            
+            # Mensagem completa conforme teu padrão anterior
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
@@ -48,14 +60,15 @@ def renderizar_bloco(titulo):
                     st.session_state[f"msg_{titulo}"] = msg
                     st.rerun()
 
-        # Botões de Status (Green/Red/Dev)
+        # Edição de Status com Placar
         if f"id_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
             def registrar(status):
                 msg_id = st.session_state.get(f"id_{titulo}")
                 url = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-                novo_texto = st.session_state.get(f"msg_{titulo}") + f"\n\n🔄 *Status:* {status}"
+                # Adiciona o placar à mensagem original
+                novo_texto = st.session_state.get(f"msg_{titulo}") + f"\n\n⚽ *Placar:* {placar}\n🔄 *Status:* {status}"
                 requests.post(url, data={"chat_id": CHAT_ID, "message_id": msg_id, "text": novo_texto, "parse_mode": "Markdown"})
                 st.success("Atualizado!")
 
