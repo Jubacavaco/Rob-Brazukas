@@ -48,5 +48,46 @@ def renderizar_bloco(titulo):
             st.write("📊 **Probabilidades:**")
             
             cols_g = st.columns(2)
-            cols_g[0].write(f"Over 1.5: {min(p+5, 100):.0f}%"); cols_g[0].progress(min((p+5)/100, 1.0))
-            cols_g[1].write(f"Over 2.5: {min(p, 100):.
+            cols_g[0].write(f"Over 1.5: {min(p+5, 100):.0f}%")
+            cols_g[0].progress(min((p+5)/100, 1.0))
+            cols_g[1].write(f"Over 2.5: {min(p, 100):.0f}%")
+            cols_g[1].progress(min(p/100, 1.0))
+            
+            prob_val = st.text_input("Ajustar Probabilidade (%)", value=str(st.session_state.get(f"val_prob_{titulo}", "")), key=f"inp_prob_{titulo}")
+            mercado = st.selectbox(f"Definir Mercado", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+            tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
+            
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+            
+            st.info(msg)
+            st.session_state[f"msg_{titulo}"] = msg
+            
+            if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
+                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+                r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+                if r.get("ok"): 
+                    st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
+                    st.rerun()
+
+        # Botões de controle com formatação especial
+        if f"id_{titulo}" in st.session_state:
+            st.markdown("---")
+            col_b1, col_b2, col_b3 = st.columns(3)
+            
+            def editar_telegram(status, status_visual):
+                new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
+                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                              data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
+                st.success(f"Status atualizado!")
+
+            if col_b1.button("✅ GREEN", key=f"g_{titulo}"): 
+                editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
+            if col_b2.button("❌ RED", key=f"r_{titulo}"): 
+                editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
+            if col_b3.button("🔄 DEV", key=f"d_{titulo}"): 
+                editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
+
+# Layout principal
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
