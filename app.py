@@ -3,7 +3,7 @@ import requests
 import re
 
 st.set_page_config(page_title="Robô Brazukas Dual", layout="wide")
-st.title("🤖 Painel Brazukas - Gestão com Gráficos")
+st.title("🤖 Painel Brazukas - Gestão Visual e Independente")
 
 # --- CONFIGURAÇÕES ---
 st.sidebar.header("⚙️ Configurações Telegram")
@@ -18,17 +18,15 @@ def calcular_probabilidade(texto):
     media = sum(gols) / len(gols)
     return min(media * 35, 100)
 
-def get_msg(tipo, camp, casa, vis, hora):
-    base = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n"
-    corpos = {
-        "Over 2.5": "🎯 *Mercado:* Over 2.5 FT\n",
-        "Over 1.5": "🎯 *Mercado:* Over 1.5 FT\n",
-        "BTTS": "🎯 *Mercado:* Ambas Marcam (BTTS)\n",
-        "LTD": "🎯 *Mercado:* Contra o Empate (LTD)\n"
-    }
-    return base + corpos.get(tipo, "") + f"⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+def registrar_resultado(titulo, status, token, chat_id):
+    if f"msg_id_{titulo}" in st.session_state:
+        msg_id = st.session_state[f"msg_id_{titulo}"]
+        txt = st.session_state[f"msg_txt_{titulo}"] + f"\n\n🔄 *Status:* {status}"
+        requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                      data={"chat_id": chat_id, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
+        st.success(f"Status {titulo} atualizado para: {status}")
 
-# --- FUNÇÃO DO BLOCO COM GRÁFICOS ---
+# --- BLOCO PRINCIPAL ---
 def gerar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     with st.form(key=f"form_{titulo}"):
@@ -41,19 +39,34 @@ def gerar_bloco(titulo):
 
         if submit:
             prob = calcular_probabilidade(lista)
-            st.session_state[f"prob_{titulo}"] = prob # Salva para o gráfico
+            st.session_state[f"prob_{titulo}"] = prob
             
-            # Lógica de seleção (Prioridade)
-            if prob >= 65: tipo = "Over 2.5"
-            elif prob >= 70: tipo = "Over 1.5"
+            if prob >= 65: tipo = "Over 2.5 FT"
+            elif prob >= 70: tipo = "Over 1.5 FT"
             elif prob >= 55: tipo = "BTTS"
             elif prob >= 51: tipo = "LTD"
             else: tipo = None
 
             if tipo:
-                msg = get_msg(tipo, camp, casa, vis, hora)
+                msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Camp:* {camp}\n🆚 {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
                 resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
                                     data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}).json()
                 if resp.get("ok"):
                     st.session_state[f"msg_id_{titulo}"] = resp["result"]["message_id"]
-                    st.session_state[f"msg_
+                    st.session_state[f"msg_txt_{titulo}"] = msg
+                    st.success("Sinal enviado!")
+            else:
+                st.warning("Probabilidade abaixo do limite.")
+
+    # --- GRÁFICOS ---
+    if f"prob_{titulo}" in st.session_state:
+        p = st.session_state[f"prob_{titulo}"]
+        st.write(f"**Probabilidade Atual: {p:.1f}%**")
+        st.caption("Gráfico de Potencial")
+        st.progress(min(p/100, 1.0))
+
+    # --- BOTÕES ---
+    if f"msg_id_{titulo}" in st.session_state:
+        c1, c2, c3 = st.columns(3)
+        if c1.button("✅ GREEN", key=f"g_{titulo}"): registrar_resultado(titulo, "✅ GREEN!!", token, chat_id)
+        if c2.button("❌ RED", key=f"r_{titulo}"): registrar_resultado(titulo, "❌ RED!", token, chat_id)
