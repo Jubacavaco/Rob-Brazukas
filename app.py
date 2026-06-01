@@ -31,9 +31,7 @@ def renderizar_bloco(titulo):
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         p = calcular_probabilidade(lista)
         st.session_state[f"prob_{titulo}"] = p
-        # Regras automáticas sugeridas
         st.session_state[f"conf_{titulo}"] = round(p, 1)
-        st.session_state[f"stake_{titulo}"] = "1.0%" if p < 70 else "2.0%"
         st.rerun()
     
     # RESULTADOS
@@ -46,18 +44,16 @@ def renderizar_bloco(titulo):
         st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)"); st.progress(max(0, p-10)/100)
         st.write(f"LTD ({max(0, 100-p):.1f}%)"); st.progress(max(0, 100-p)/100)
         
-        # CAMPOS EDITÁVEIS
-        col_a, col_b = st.columns(2)
-        conf = col_a.text_input("Confiança (%)", value=str(st.session_state.get(f"conf_{titulo}", "")), key=f"inp_conf_{titulo}")
-        stake = col_b.text_input("Stake Recomendada", value=str(st.session_state.get(f"stake_{titulo}", "")), key=f"inp_stake_{titulo}")
+        # CAMPO DE CONFIANÇA
+        conf = st.text_input("Confiança (%)", value=str(st.session_state.get(f"conf_{titulo}", "")), key=f"inp_conf_{titulo}")
         
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
         
-        st.write(f"🎯 Mercado: **{tipo}** | Confiança: **{conf}%** | Stake: **{stake}**")
+        st.write(f"🎯 Mercado: **{tipo}** | Confiança: **{conf}%**")
         
         # MENSAGEM FINAL
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Confiança:* {conf}%\n💰 *Stake:* {stake}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Confiança:* {conf}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
