@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import re
 
+# Configuração simples
 st.set_page_config(layout="wide")
 st.title("🤖 Painel Brazukas - Gestão Total")
 
@@ -21,7 +22,7 @@ def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Inputs organizados
+        # Inputs
         col_c1, col_c2 = st.columns(2)
         camp = col_c1.text_input(f"Campeonato", key=f"c_{titulo}")
         hora = col_c2.text_input(f"Horário", key=f"h_{titulo}")
@@ -29,61 +30,30 @@ def renderizar_bloco(titulo):
         vis = st.text_input(f"Visitante", key=f"v_{titulo}")
         lista = st.text_area(f"Lista de jogos", key=f"l_{titulo}", height=100)
         
-        if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
+        if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
             st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
         
         if f"prob_{titulo}" in st.session_state:
             p_base = st.session_state[f"prob_{titulo}"]
-            
-            # --- CAIXA DE AJUSTE MANUAL ---
             p_manual = st.text_input("Probabilidade (%)", value=f"{p_base:.1f}", key=f"ajuste_{titulo}")
-            try:
-                p = float(p_manual)
-            except:
-                p = p_base
-            # -------------------------------
+            p = float(p_manual) if p_manual else p_base
             
-            st.write("📊 **Acompanhamento Visual:**")
-            st.write(f"Over 1.5 FT ({min(p+5, 100):.0f}%)"); st.progress(min((p+5)/100, 1.0))
-            st.write(f"Over 2.5 FT ({min(p, 100):.0f}%)"); st.progress(min(p/100, 1.0))
+            st.write(f"📊 **Over 2.5 FT:** {min(p, 100):.0f}%")
+            st.progress(min(p/100, 1.0))
             
             mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+            tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
             
-            if mercado == "Automático":
-                if p >= 70: tipo = "Over 1.5 FT"
-                elif p >= 65: tipo = "Over 2.5 FT"
-                elif p >= 55: tipo = "Ambas Marcam (BTTS)"
-                else: tipo = "LTD"
-            else:
-                tipo = mercado
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}"
+            msg = f"🚨 *Alerta* 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 {p:.1f}%\n⏰ {hora}"
             st.info(msg)
             
-            if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
+            if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}"):
                 if token and chat_id:
-                    payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-                    r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-                    if r.get("ok"): 
-                        st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
-                        st.session_state[f"msg_{titulo}"] = msg
-                        st.rerun()
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
+                    st.success("Enviado!")
                 else:
-                    st.error("Configure o Token e ID na barra lateral!")
-
-        if f"id_{titulo}" in st.session_state:
-            st.write("---")
-            c1, c2, c3 = st.columns(3)
-            def editar_telegram(status):
-                new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                            data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
-                st.success(f"Registrado: {status}")
-
-            if c1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("✅ GREEN!!")
-            if c2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("❌ RED!")
-            if c3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("🔄 DEVOLVIDA")
+                    st.error("Configura Token/ID!")
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
