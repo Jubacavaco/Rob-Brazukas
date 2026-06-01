@@ -2,19 +2,23 @@ import streamlit as st
 import requests
 import re
 
-# Configuração da página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
 st.title("🤖 Sistema Brazukas Top Tips")
 
-# Configuração de Secrets
 TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\d+', texto)
     gols = [int(n) for n in numeros if int(n) <= 10]
-    if len(gols) < 2: return 0
-    return min((sum(gols) / len(gols)) * 20, 100)
+    if len(gols) < 2: return 0, 0, 0
+    # Lógica simples baseada na lista: 
+    # Média dos gols como base para probabilidade
+    media = sum(gols) / len(gols)
+    prob_casa = min(media * 15 + 10, 80)
+    prob_vis = min((10 - media) * 10, 80)
+    prob_emp = 100 - prob_casa - prob_vis
+    return prob_casa, prob_vis, prob_emp
 
 def renderizar_bloco(titulo):
     with st.container(border=True):
@@ -26,53 +30,38 @@ def renderizar_bloco(titulo):
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-            st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
-            st.rerun()
+            pc, pv, pe = calcular_probabilidade(lista)
+            st.session_state[f"probs_{titulo}"] = (pc, pv, pe)
         
-        if f"prob_{titulo}" in st.session_state:
-            p = st.session_state[f"prob_{titulo}"]
+        if f"probs_{titulo}" in st.session_state:
+            pc, pv, pe = st.session_state[f"probs_{titulo}"]
             
-            # Análise Gráfica Completa
-            st.write("📊 **Análise Gráfica:**")
-            col1, col2 = st.columns(2)
-            col1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); col1.progress(min((p+5)/100, 1.0))
-            col2.write(f"O 2.5 ({min(p, 100):.0f}%)"); col2.progress(min(p/100, 1.0))
+            # Gráficos Match Odds
+            st.write("🏆 **Probabilidade Match Odds:**")
+            st.write(f"🏠 {casa}: {pc:.1f}%"); st.progress(pc/100)
+            st.write(f"✈️ {vis}: {pv:.1f}%"); st.progress(pv/100)
+            st.write(f"🤝 Empate: {pe:.1f}%"); st.progress(pe/100)
             
-            col3, col4 = st.columns(2)
-            col3.write(f"BTTS ({min(p-10, 100):.0f}%)"); col3.progress(max(min((p-10)/100, 1.0), 0.0))
-            col4.write(f"LTD ({min(100-p, 100):.0f}%)"); col4.progress(min((100-p)/100, 1.0))
+            mercados = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
+            tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
             
-            # Novo Gráfico de Vencedor (Match Odds)
-            st.write("🏆 **Probabilidade de Vitória (Match Odds):**")
-            col5, col6 = st.columns(2)
-            col5.write(f"{casa} vence"); col5.progress(min((p+10)/100, 1.0))
-            col6.write(f"{vis} vence"); col6.progress(max(min((100-p-10)/100, 1.0), 0.0))
-
-            # Ajuste de Mercado
-            mercados = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", "Match Odds (Vencedor)"]
-            tipo = st.selectbox("Mercado", mercados, key=f"sel_{titulo}")
+            # Lógica da Mensagem
+            display_mercado = tipo
+            if "Casa Vence" in tipo: display_mercado = f"Match Odd's: {casa}"
+            elif "Visitante Vence" in tipo: display_mercado = f"Match Odd's: {vis}"
             
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 {p:.1f}%\n⏰ {hora}"
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {display_mercado}\n⏰ {hora}"
+            st.info(f"Prévia:\n{msg}")
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
-                if not TOKEN or TOKEN == "":
-                    st.error("Erro: Token ausente no Secrets!")
+                url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+                res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+                if res.get("ok"):
+                    st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                    st.session_state[f"msg_{titulo}"] = msg
+                    st.success("Enviado!")
                 else:
-                    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-                    res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
-                    if res.get("ok"):
-                        st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                        st.session_state[f"msg_{titulo}"] = msg
-                        st.rerun()
-                    else:
-                        st.error(f"Erro Telegram: {res.get('description')}")
-
-        # Status
-        if f"id_{titulo}" in st.session_state:
-            st.write("---")
-            if st.button("✅ GREEN", key=f"g_{titulo}"): st.success("Green!")
-            if st.button("❌ RED", key=f"r_{titulo}"): st.error("Red!")
-            if st.button("🔄 DEV", key=f"d_{titulo}"): st.info("Devolvida!")
+                    st.error(f"Erro: {res.get('description')}")
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
