@@ -33,7 +33,12 @@ def renderizar_bloco(titulo):
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
+    
+    # NOVOS CAMPOS
+    placar_momento = st.text_input("Placar Momento", key=f"pm_{titulo}")
+    placar_ht = st.text_input("Placar HT", key=f"pht_{titulo}")
     placar_final = st.text_input("Placar Final", key=f"pf_{titulo}")
+    
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
     
     if st.button("Analisar", key=f"an_{titulo}"):
@@ -45,29 +50,17 @@ def renderizar_bloco(titulo):
         
         if sugestao != "Nenhum mercado recomendado":
             st.success(f"🎯 Sugestão: {sugestao}")
-        else:
-            st.warning("⚠️ Nenhum mercado recomendado")
-        
-        # Gráficos de Gols
-        st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
-        st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
-        st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
-        
-        # Gráficos Match Odds
-        st.progress(min(max(pc/100, 0), 1), text=f"Vit. {casa if casa else 'Casa'}: {pc:.1f}%")
-        st.progress(min(max(pv/100, 0), 1), text=f"Vit. {vis if vis else 'Visitante'}: {pv:.1f}%")
         
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
         
-        # MENSAGEM CORRIGIDA
         msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
                f"🎯 Mercado: {tipo}\n"
                f"📈 Probabilidade: {prob}%\n"
                f"⏰ Horário: {hora}\n\n"
-               "⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
+               "⚠️ Aposte com responsabilidade.")
         
         st.info(f"Prévia:\n{msg}")
         
@@ -81,17 +74,19 @@ def renderizar_bloco(titulo):
 
     if f"id_{titulo}" in st.session_state:
         st.write("---")
-        c1, c2, c3 = st.columns(3)
-        def editar(status):
+        
+        def editar(status, complemento):
             msg_id = st.session_state[f"id_{titulo}"]
-            txt = st.session_state[f"msg_{titulo}"] + f"\n\n⚽ Placar Final: {placar_final}\n🔄 Status: {status}"
+            txt = st.session_state[f"msg_{titulo}"] + f"\n\n{complemento}\n🔄 Status: {status}"
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
-            st.success(f"Status: {status}")
+            st.success(f"Atualizado para: {status}")
 
-        if c1.button("✅", key=f"g_{titulo}"): editar("GREEN ✅")
-        if c2.button("❌", key=f"r_{titulo}"): editar("RED ❌")
-        if c3.button("🔄", key=f"d_{titulo}"): editar("DEVOLVIDA 🔄")
+        c1, c2, c3, c4 = st.columns(4)
+        if c1.button("✅ Momento", key=f"m_{titulo}"): editar("GREEN", f"⚽ Placar Momento: {placar_momento}")
+        if c2.button("✅ HT", key=f"ht_{titulo}"): editar("GREEN", f"⚽ Placar HT: {placar_ht}")
+        if c3.button("✅ Final", key=f"f_{titulo}"): editar("GREEN", f"⚽ Placar Final: {placar_final}")
+        if c4.button("❌ RED", key=f"r_{titulo}"): editar("RED", "❌ Resultado: RED")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
