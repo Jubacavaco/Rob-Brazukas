@@ -34,6 +34,7 @@ def renderizar_bloco(titulo):
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     
+    # CAMPOS DE PLACAR
     placar_momento = st.text_input("Placar Momento", key=f"pm_{titulo}")
     placar_ht = st.text_input("Placar HT", key=f"pht_{titulo}")
     placar_final = st.text_input("Placar Final", key=f"pf_{titulo}")
@@ -76,11 +77,10 @@ def renderizar_bloco(titulo):
         
         def editar(status, complemento):
             msg_id = st.session_state[f"id_{titulo}"]
-            # AQUI FOI ADICIONADO O DESTAQUE COM EMOJIS
             txt = st.session_state[f"msg_{titulo}"] + f"\n\n{complemento}\n\n🔄 STATUS ATUAL: *{status}*"
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
-            st.success(f"Atualizado para: {status}")
+            st.success(f"Atualizado: {status}")
 
         c1, c2, c3, c4 = st.columns(4)
         if c1.button("✅ Momento", key=f"m_{titulo}"): editar("GREEN 🟢✅", f"⚽ Placar Momento: {placar_momento}")
