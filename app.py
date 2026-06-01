@@ -40,26 +40,13 @@ def renderizar_bloco(titulo):
             placar = st.text_input("Placar Final", key=f"p_{titulo}")
             
             p = prob_valor
-            st.write("📊 **Mercados:**")
-            col1, col2 = st.columns(2)
-            col1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); col1.progress(min((p+5)/100, 1.0))
-            col2.write(f"O 2.5 ({min(p, 100):.0f}%)"); col2.progress(min(p/100, 1.0))
-            
-            col3, col4 = st.columns(2)
-            col3.write(f"BTTS ({min(p-10, 100):.0f}%)"); col3.progress(max(min((p-10)/100, 1.0), 0.0))
-            col4.write(f"LTD ({min(100-p, 100):.0f}%)"); col4.progress(min((100-p)/100, 1.0))
-
             # Lógica de Sugestão com Hierarquia de Prioridade
-            if p >= 65:
-                sugestao = "Over 2.5 FT"
-            elif p >= 75:
-                sugestao = "Over 1.5 FT"
-            elif p >= 51:
-                sugestao = "Ambas Marcam (BTTS)"
-            else:
-                sugestao = "LTD"
+            if p >= 65: sugestao = "Over 2.5 FT"
+            elif p >= 75: sugestao = "Over 1.5 FT" # Regra específica de prioridade
+            elif p >= 51: sugestao = "Ambas Marcam (BTTS)"
+            else: sugestao = "LTD"
 
-            st.success(f"💡 **Sugestão:** {sugestao} (Prob: {p:.1f}%)")
+            st.success(f"💡 Sugestão: {sugestao}")
             
             opcoes = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"]
             tipo = st.selectbox(f"Selecione o Mercado ({titulo}):", opcoes, index=opcoes.index(sugestao), key=f"sel_{titulo}")
@@ -69,11 +56,17 @@ def renderizar_bloco(titulo):
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
                 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-                res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
-                if res.get("ok"):
-                    st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                    st.session_state[f"msg_{titulo}"] = msg
-                    st.rerun()
+                try:
+                    res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+                    if res.get("ok"):
+                        st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                        st.session_state[f"msg_{titulo}"] = msg
+                        st.success("Enviado com sucesso!")
+                        st.rerun()
+                    else:
+                        st.error(f"Erro no Telegram: {res.get('description')}")
+                except Exception as e:
+                    st.error(f"Erro ao conectar: {e}")
 
         # Edição de Status
         if f"id_{titulo}" in st.session_state:
