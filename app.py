@@ -34,7 +34,6 @@ def renderizar_bloco(titulo):
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     
-    # CAMPOS DE PLACAR
     pm = st.text_input("Placar Momento", key=f"pm_{titulo}")
     pht = st.text_input("Placar HT", key=f"pht_{titulo}")
     pf = st.text_input("Placar Final", key=f"pf_{titulo}")
@@ -53,7 +52,6 @@ def renderizar_bloco(titulo):
         else:
             st.warning("⚠️ Nenhum mercado recomendado")
         
-        # GRÁFICOS (MANTIDOS COMO VOCÊ PEDIU)
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
         st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
@@ -68,7 +66,8 @@ def renderizar_bloco(titulo):
                     f"🆚 Jogo: {casa} x {vis}\n"
                     f"🎯 Mercado: {tipo}\n"
                     f"📈 Probabilidade: {prob}%\n"
-                    f"⏰ Horário: {hora}")
+                    f"⏰ Horário: {hora}\n\n"
+                    "⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
         
         st.info(f"Prévia:\n{msg_base}")
         
@@ -85,7 +84,7 @@ def renderizar_bloco(titulo):
         
         def atualizar_telegram(status):
             msg_id = st.session_state[f"id_{titulo}"]
-            msg_base = st.session_state.get(f"msg_base_{titulo}", "Alerta de Entrada")
+            msg_base = st.session_state.get(f"msg_base_{titulo}", "")
             txt = (f"{msg_base}\n\n"
                    f"⚽ Momento: {pm}\n"
                    f"⚽ HT: {pht}\n"
@@ -97,10 +96,10 @@ def renderizar_bloco(titulo):
             st.success(f"Atualizado: {status}")
 
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("✅ Atualizar Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢")
-        if c2.button("✅ Atualizar HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢")
-        if c3.button("✅ Finalizar Jogo", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅")
-        if c4.button("❌ Marcar RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌")
+        if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢")
+        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢")
+        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅")
+        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
