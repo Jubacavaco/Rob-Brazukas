@@ -34,7 +34,6 @@ def renderizar_bloco(titulo):
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     
-    # Campos de placar que você preenche no painel
     pm = st.text_input("Placar Momento", key=f"pm_{titulo}")
     pht = st.text_input("Placar HT", key=f"pht_{titulo}")
     pf = st.text_input("Placar Final", key=f"pf_{titulo}")
@@ -51,7 +50,6 @@ def renderizar_bloco(titulo):
         if sugestao != "Nenhum mercado recomendado":
             st.success(f"🎯 Sugestão: {sugestao}")
         
-        # Gráficos mantidos
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
         st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
@@ -87,11 +85,12 @@ def renderizar_bloco(titulo):
             msg_id = st.session_state[f"id_{titulo}"]
             msg_base = st.session_state.get(f"msg_base_{titulo}", "")
             
-            # Formatação conforme seu novo modelo
             if modo == "MOMENTO":
                 txt_placar = f"\n⚽ Momento: {pm}"
             elif modo == "HT":
                 txt_placar = f"\n⚽ HT: {pht}"
+            elif modo == "HT2":
+                txt_placar = f"\n⚽ HT: {pht} (Em análise)"
             elif modo == "FINAL":
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
             else:
@@ -103,11 +102,12 @@ def renderizar_bloco(titulo):
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
             st.success(f"Atualizado: {status}")
 
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢", "MOMENTO")
         if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢", "HT")
-        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
-        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
+        if c3.button("HT 2", key=f"ht2_{titulo}"): atualizar_telegram("EM ANDAMENTO ⚪", "HT2")
+        if c4.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
+        if c5.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
