@@ -34,10 +34,9 @@ def renderizar_bloco(titulo):
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     
-    # CAMPOS DE PLACAR
-    placar_momento = st.text_input("Placar Momento", key=f"pm_{titulo}")
-    placar_ht = st.text_input("Placar HT", key=f"pht_{titulo}")
-    placar_final = st.text_input("Placar Final", key=f"pf_{titulo}")
+    pm = st.text_input("Placar Momento", key=f"pm_{titulo}")
+    pht = st.text_input("Placar HT", key=f"pht_{titulo}")
+    pf = st.text_input("Placar Final", key=f"pf_{titulo}")
     
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
     
@@ -47,46 +46,49 @@ def renderizar_bloco(titulo):
     if f"probs_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
         sugestao = obter_sugestao(p15, p25, pbtts, pltd)
-        
-        if sugestao != "Nenhum mercado recomendado":
-            st.success(f"🎯 Sugestão: {sugestao}")
+        if sugestao != "Nenhum mercado recomendado": st.success(f"🎯 Sugestão: {sugestao}")
         
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
         
-        msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
-               f"🏆 Campeonato: {camp}\n"
-               f"🆚 Jogo: {casa} x {vis}\n"
-               f"🎯 Mercado: {tipo}\n"
-               f"📈 Probabilidade: {prob}%\n"
-               f"⏰ Horário: {hora}\n\n"
-               "⚠️ Aposte com responsabilidade.")
+        msg_base = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+                    f"🏆 Campeonato: {camp}\n"
+                    f"🆚 Jogo: {casa} x {vis}\n"
+                    f"🎯 Mercado: {tipo}\n"
+                    f"📈 Probabilidade: {prob}%\n"
+                    f"⏰ Horário: {hora}")
         
-        st.info(f"Prévia:\n{msg}")
+        st.info(f"Prévia:\n{msg_base}")
         
         if st.button("🚀 ENVIAR", key=f"en_{titulo}", type="primary"):
             res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", 
-                                data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+                                data={"chat_id": CHAT_ID, "text": msg_base, "parse_mode": "Markdown"}).json()
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                st.session_state[f"msg_{titulo}"] = msg
+                st.session_state[f"msg_base_{titulo}"] = msg_base
                 st.success("Enviado!")
 
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         
-        def editar(status, complemento):
+        def atualizar_telegram(status):
             msg_id = st.session_state[f"id_{titulo}"]
-            txt = st.session_state[f"msg_{titulo}"] + f"\n\n{complemento}\n\n🔄 STATUS ATUAL: *{status}*"
+            # Constrói a mensagem acumulando os dados
+            txt = (f"{st.session_state[f'msg_base_{titulo}']}\n\n"
+                   f"⚽ Momento: {pm}\n"
+                   f"⚽ HT: {pht}\n"
+                   f"⚽ Final: {pf}\n\n"
+                   f"🔄 STATUS ATUAL: *{status}*")
+            
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
             st.success(f"Atualizado: {status}")
 
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("✅ Momento", key=f"m_{titulo}"): editar("GREEN 🟢✅", f"⚽ Placar Momento: {placar_momento}")
-        if c2.button("✅ HT", key=f"ht_{titulo}"): editar("GREEN 🟢✅", f"⚽ Placar HT: {placar_ht}")
-        if c3.button("✅ Final", key=f"f_{titulo}"): editar("GREEN 🟢✅", f"⚽ Placar Final: {placar_final}")
-        if c4.button("❌ RED", key=f"r_{titulo}"): editar("RED 🔴❌", "❌ Resultado: RED")
+        if c1.button("✅ Atualizar Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢")
+        if c2.button("✅ Atualizar HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢")
+        if c3.button("✅ Finalizar Jogo", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅")
+        if c4.button("❌ Marcar RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
