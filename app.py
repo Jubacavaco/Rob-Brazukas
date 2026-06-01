@@ -3,7 +3,7 @@ import requests
 import re
 
 st.set_page_config(page_title="Robô Brazukas Dual", layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Dual de Sinais")
+st.title("🤖 Painel Brazukas - Gestão Dual Independente")
 
 # --- CONFIGURAÇÕES NO SIDEBAR ---
 st.sidebar.header("⚙️ Configurações Telegram")
@@ -28,35 +28,46 @@ def decidir_tipo(prob):
 def get_msg(tipo, camp, casa, vis, hora):
     return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
 
-# --- FUNÇÃO DE PROCESSO DE JOGO ---
-def gerar_bloco_jogo(titulo):
+# --- FUNÇÃO DE BLOCO INDEPENDENTE ---
+def gerar_bloco_independente(titulo):
     st.subheader(f"🏟️ {titulo}")
-    camp = st.text_input(f"Campeonato ({titulo})", key=f"camp_{titulo}")
-    casa = st.text_input(f"Time Casa ({titulo})", key=f"casa_{titulo}")
-    vis = st.text_input(f"Time Vis ({titulo})", key=f"vis_{titulo}")
-    hora = st.text_input(f"Horário ({titulo})", key=f"hora_{titulo}")
-    lista = st.text_area(f"Cole a lista de jogos para {titulo}:", height=120, key=f"lista_{titulo}")
-    
-    if st.button(f"Analisar {titulo}", key=f"btn_{titulo}"):
-        prob = calcular_probabilidade(lista)
-        tipo = decidir_tipo(prob)
-        st.write(f"📈 Probabilidade: {prob:.1f}%")
+    # O "form" isola os botões e inputs de um lado em relação ao outro
+    with st.form(key=f"form_{titulo}"):
+        camp = st.text_input(f"Campeonato ({titulo})")
+        casa = st.text_input(f"Time Casa ({titulo})")
+        vis = st.text_input(f"Time Vis ({titulo})")
+        hora = st.text_input(f"Horário ({titulo})")
+        lista = st.text_area(f"Cole a lista de jogos para {titulo}:", height=100)
         
-        if tipo:
-            msg = get_msg(tipo, camp, casa, vis, hora)
-            st.info(msg)
-            if st.button(f"🚀 Enviar {titulo} ao Telegram", key=f"envio_{titulo}"):
-                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-                resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-                if resp.get("ok"): st.success(f"Sinal {titulo} enviado!")
-        else:
-            st.warning("Probabilidade abaixo do limite.")
+        submit_analise = st.form_submit_button("📊 Analisar e Enviar")
+        
+        if submit_analise:
+            if not token or not chat_id:
+                st.error("Preencha o Token e ID na barra lateral!")
+            elif not lista:
+                st.warning("Cole a lista de jogos primeiro.")
+            else:
+                prob = calcular_probabilidade(lista)
+                tipo = decidir_tipo(prob)
+                
+                if tipo:
+                    msg = get_msg(tipo, camp, casa, vis, hora)
+                    payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+                    resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+                    
+                    if resp.get("ok"):
+                        st.success(f"✅ Sinal {titulo} enviado! ({prob:.1f}%)")
+                        st.info(msg)
+                    else:
+                        st.error("Erro ao enviar. Verifique o Token/ID.")
+                else:
+                    st.warning("Probabilidade abaixo do limite para envio.")
 
 # --- LAYOUT DUAL ---
 col1, col2 = st.columns(2)
 
 with col1:
-    gerar_bloco_jogo("Jogo 01")
+    gerar_bloco_independente("Jogo 01")
 
 with col2:
-    gerar_bloco_jogo("Jogo 02")
+    gerar_bloco_independente("Jogo 02")
