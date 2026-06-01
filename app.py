@@ -32,6 +32,7 @@ def renderizar_bloco(titulo):
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
+    prog = st.text_input("Prognóstico", key=f"pg_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     placar_final = st.text_input("Placar Final", key=f"pf_{titulo}")
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
@@ -51,14 +52,18 @@ def renderizar_bloco(titulo):
         # Gráficos
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
-        st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
-        st.progress(min(max(pc/100, 0), 1), text=f"Vit. {casa if casa else 'Casa'}: {pc:.1f}%")
-        st.progress(min(max(pv/100, 0), 1), text=f"Vit. {vis if vis else 'Visitante'}: {pv:.1f}%")
         
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
         
-        msg = (f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 Probabilidade: {prob}%\n⏰ {hora}\n\n"
+        # MENSAGEM NO MODELO SOLICITADO
+        msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+               f"🏆 Campeonato: {camp}\n"
+               f"🆚 Jogo: {casa} x {vis}\n"
+               f"🎯 Mercado: {tipo}\n"
+               f"💥 Prognóstico: {prog}\n"
+               f"📈 Probabilidade: {prob}%\n"
+               f"⏰ Horário: {hora}\n\n"
                f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
         
         st.info(f"Prévia:\n{msg}")
