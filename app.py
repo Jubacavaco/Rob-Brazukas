@@ -30,7 +30,7 @@ def renderizar_bloco(titulo):
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
-        placar = st.text_input("Placar Final (para Green/Red)", key=f"p_{titulo}")
+        placar = st.text_input("Placar Final", key=f"p_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
@@ -40,20 +40,15 @@ def renderizar_bloco(titulo):
         if f"prob_{titulo}" in st.session_state:
             p = st.session_state[f"prob_{titulo}"]
             
-            # Gráficos de Probabilidade
-            st.write("📊 **Mercados:**")
-            # Grid 2x2 para os gráficos
-            g1, g2 = st.columns(2)
-            g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); g1.progress(min((p+5)/100, 1.0))
-            g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); g2.progress(min(p/100, 1.0))
+            # Escolha do Mercado
+            modo = st.radio(f"Como definir o mercado ({titulo})?", ["Deixar Sistema Analisar", "Escolher Manualmente"], key=f"modo_{titulo}")
             
-            g3, g4 = st.columns(2)
-            g3.write(f"BTTS ({min(p-10, 100):.0f}%)"); g3.progress(max(min((p-10)/100, 1.0), 0.0))
-            g4.write(f"LTD ({min(100-p, 100):.0f}%)"); g4.progress(min((100-p)/100, 1.0))
+            if modo == "Deixar Sistema Analisar":
+                tipo = "Over 1.5 FT" if p >= 70 else "LTD"
+            else:
+                tipo = st.selectbox("Escolha a Aposta:", ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
             
-            mercado = st.selectbox(f"Mercado ({titulo})", ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
@@ -64,7 +59,7 @@ def renderizar_bloco(titulo):
                     st.session_state[f"msg_{titulo}"] = msg
                     st.rerun()
 
-        # Edição de Status com Placar
+        # Edição de Status
         if f"id_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
