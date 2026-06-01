@@ -26,20 +26,19 @@ def renderizar_bloco(titulo):
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
-    # ANÁLISE (Executa o cálculo mas não exibe o texto da %)
+    # ANÁLISE FORÇADA
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
+        st.rerun() # Força a página a atualizar para mostrar o seletor
     
-    # SE JÁ HOUVE ANÁLISE, MOSTRA MERCADO E ENVIO
+    # SE JÁ HOUVE ANÁLISE, MOSTRA MERCADO
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
         
-        # ESCOLHA DO MERCADO
         mercado = st.selectbox(f"Definir Mercado ({titulo})", 
                                ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
                                key=f"sel_{titulo}")
         
-        # Lógica
         if mercado == "Automático":
             if p >= 70: tipo = "Over 1.5 FT"
             elif p >= 65: tipo = "Over 2.5 FT"
@@ -59,7 +58,7 @@ def renderizar_bloco(titulo):
             r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
             if r.get("ok"): 
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
-                st.success("Enviado com sucesso!")
+                st.rerun()
 
     # BOTÕES DE CONTROLE
     if f"id_{titulo}" in st.session_state:
