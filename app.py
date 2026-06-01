@@ -32,7 +32,6 @@ def renderizar_bloco(titulo):
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
-    prog = st.text_input("Prognóstico", key=f"pg_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     placar_final = st.text_input("Placar Final", key=f"pf_{titulo}")
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
@@ -44,7 +43,6 @@ def renderizar_bloco(titulo):
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
         sugestao = obter_sugestao(p15, p25, pbtts, pltd)
         
-        # Exibe status da recomendação
         if sugestao != "Nenhum mercado recomendado":
             st.success(f"🎯 Sugestão: {sugestao}")
         else:
@@ -62,12 +60,11 @@ def renderizar_bloco(titulo):
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
         
-        # MENSAGEM NO MODELO SOLICITADO
+        # MENSAGEM SEM O PROGNÓSTICO
         msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
                f"🎯 Mercado: {tipo}\n"
-               f"💥 Prognóstico: {prog}\n"
                f"📈 Probabilidade: {prob}%\n"
                f"⏰ Horário: {hora}\n\n"
                f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
