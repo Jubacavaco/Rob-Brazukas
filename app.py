@@ -66,13 +66,16 @@ def renderizar_bloco(titulo):
                 mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
                 tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
                 
-                # MENSAGEM COMPLETA CONFORME SOLICITADO
+                prob_selecionada = p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd
+                
+                # MENSAGEM AJUSTADA COM PROB % E AVISO LEGAL NO RODAPÉ
                 msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
                        f"🏆 Campeonato: {camp}\n"
                        f"🆚 Jogo: {casa} x {vis}\n"
-                       f"🎯 Mercado Principal: {tipo}\n"
-                       f"📊 Mercado Secundário (Escanteios/Prob): {p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd:.1f}%\n"
-                       f"⏰ Horário: {hora}")
+                       f"🎯 Mercado: {tipo}\n"
+                       f"📈 Probabilidade: {prob_selecionada:.1f}%\n"
+                       f"⏰ Horário: {hora}\n\n"
+                       f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
                 
                 st.info(f"**Prévia da mensagem:**\n{msg}")
                 
