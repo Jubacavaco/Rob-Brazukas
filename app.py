@@ -20,10 +20,17 @@ def calcular_probabilidade(texto):
     return float(p_casa), float(p_vis), float(p_emp), float(p_gols)
 
 def obter_sugestao(p):
-    if p >= 65: return "Over 2.5 FT"
-    elif p >= 75: return "Over 1.5 FT"
-    elif p >= 51: return "Ambas Marcam (BTTS)"
-    else: return "LTD"
+    # Regras de prioridade solicitadas:
+    if p >= 65: 
+        return "Over 2.5 FT"
+    elif p >= 75: 
+        return "Over 1.5 FT"
+    elif p >= 51: 
+        # Se bater 51%, verifica prioridade de gols
+        if p >= 65: return "Over 2.5 FT"
+        return "Ambas Marcam (BTTS)"
+    else: 
+        return "LTD"
 
 def renderizar_bloco(titulo):
     with st.container(border=True):
