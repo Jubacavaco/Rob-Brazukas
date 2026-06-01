@@ -3,7 +3,12 @@ import requests
 import re
 
 st.set_page_config(page_title="Robô Brazukas Dual", layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Dual (2 Jogos)")
+st.title("🤖 Painel Brazukas - Gestão Dual de Sinais")
+
+# --- CONFIGURAÇÕES NO SIDEBAR ---
+st.sidebar.header("⚙️ Configurações Telegram")
+token = st.sidebar.text_input("🔑 Token", type="password")
+chat_id = st.sidebar.text_input("📢 ID Canal", type="password")
 
 # --- FUNÇÕES ---
 def calcular_probabilidade(texto):
@@ -21,41 +26,37 @@ def decidir_tipo(prob):
     return None
 
 def get_msg(tipo, camp, casa, vis, hora):
-    return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ {hora}\n\n⚠️ Aposte com responsabilidade."
+    return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
 
-# --- INTERFACE DUAL ---
+# --- FUNÇÃO DE PROCESSO DE JOGO ---
+def gerar_bloco_jogo(titulo):
+    st.subheader(f"🏟️ {titulo}")
+    camp = st.text_input(f"Campeonato ({titulo})", key=f"camp_{titulo}")
+    casa = st.text_input(f"Time Casa ({titulo})", key=f"casa_{titulo}")
+    vis = st.text_input(f"Time Vis ({titulo})", key=f"vis_{titulo}")
+    hora = st.text_input(f"Horário ({titulo})", key=f"hora_{titulo}")
+    lista = st.text_area(f"Cole a lista de jogos para {titulo}:", height=120, key=f"lista_{titulo}")
+    
+    if st.button(f"Analisar {titulo}", key=f"btn_{titulo}"):
+        prob = calcular_probabilidade(lista)
+        tipo = decidir_tipo(prob)
+        st.write(f"📈 Probabilidade: {prob:.1f}%")
+        
+        if tipo:
+            msg = get_msg(tipo, camp, casa, vis, hora)
+            st.info(msg)
+            if st.button(f"🚀 Enviar {titulo} ao Telegram", key=f"envio_{titulo}"):
+                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+                resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+                if resp.get("ok"): st.success(f"Sinal {titulo} enviado!")
+        else:
+            st.warning("Probabilidade abaixo do limite.")
+
+# --- LAYOUT DUAL ---
 col1, col2 = st.columns(2)
 
-def processar_jogo(coluna, label):
-    with coluna:
-        st.subheader(f"🏟️ Jogo {label}")
-        camp = st.text_input(f"Campeonato {label}", key=f"camp_{label}")
-        casa = st.text_input(f"Time Casa {label}", key=f"casa_{label}")
-        vis = st.text_input(f"Time Vis {label}", key=f"vis_{label}")
-        hora = st.text_input(f"Horário {label}", key=f"hora_{label}")
-        lista = st.text_area(f"Lista de Jogos {label}", key=f"lista_{label}", height=100)
-        
-        if st.button(f"Analisar Jogo {label}", key=f"btn_{label}"):
-            prob = calcular_probabilidade(lista)
-            tipo = decidir_tipo(prob)
-            if tipo:
-                msg = get_msg(tipo, camp, casa, vis, hora)
-                st.info(msg)
-                st.session_state[f"msg_{label}"] = msg
-            else:
-                st.warning("Probabilidade insuficiente.")
+with col1:
+    gerar_bloco_jogo("Jogo 01")
 
-processar_jogo(col1, "A")
-processar_jogo(col2, "B")
-
-# --- CONFIGURAÇÕES GERAIS ---
-st.sidebar.header("⚙️ Configurações Telegram")
-token = st.sidebar.text_input("Token", type="password")
-chat_id = st.sidebar.text_input("ID Canal", type="password")
-
-if st.sidebar.button("🚀 Enviar Sinais Confirmados"):
-    for label in ["A", "B"]:
-        if f"msg_{label}" in st.session_state:
-            payload = {"chat_id": chat_id, "text": st.session_state[f"msg_{label}"], "parse_mode": "Markdown"}
-            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload)
-    st.success("Sinais enviados para o Telegram!")
+with col2:
+    gerar_bloco_jogo("Jogo 02")
