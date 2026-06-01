@@ -13,7 +13,10 @@ DB_FILE = "dados_sistema.json"
 def carregar_dados():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except:
+                return {}
     return {}
 
 def salvar_dados(dados):
@@ -45,8 +48,10 @@ def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Recupera dados salvos, se existirem
-        d = st.session_state.db.get(titulo, {})
+        # Recupera dados salvos
+        if titulo not in st.session_state.db:
+            st.session_state.db[titulo] = {}
+        d = st.session_state.db[titulo]
         
         c1, c2 = st.columns(2)
         camp = c1.text_input(f"Campeonato", value=d.get("camp", ""), key=f"c_{titulo}")
@@ -60,16 +65,15 @@ def renderizar_bloco(titulo):
         # Botão Analisar
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
             p = calcular_probabilidade(lista)
-            st.session_state.db[titulo] = {"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p}
+            st.session_state.db[titulo].update({"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p})
             salvar_dados(st.session_state.db)
             st.rerun()
         
         # Se temos probabilidade, exibe resultados
-        if titulo in st.session_state.db and "prob" in st.session_state.db[titulo]:
+        if "prob" in st.session_state.db[titulo]:
             p = st.session_state.db[titulo]["prob"]
             st.markdown("---")
             
-            # Formata a mensagem e salva no banco
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* Over 1.5/2.5\n📈 *Probabilidade:* {round(p,1)}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
             
@@ -77,17 +81,28 @@ def renderizar_bloco(titulo):
                 payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
                 r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
                 if r.get("ok"): 
-                    st.session_state.db[titulo]["msg_id"] = r["result"]["message_id"]
-                    st.session_state.db[titulo]["msg_text"] = msg
+                    st.session_state.db[titulo].update({"msg_id": r["result"]["message_id"], "msg_text": msg})
                     salvar_dados(st.session_state.db)
                     st.rerun()
 
         # Botões de controle
-        if "msg_id" in st.session_state.db.get(titulo, {}):
+        if "msg_id" in st.session_state.db[titulo]:
             st.markdown("---")
             col_b1, col_b2, col_b3 = st.columns(3)
             
             def editar_telegram(status, status_visual):
                 msg_id = st.session_state.db[titulo]["msg_id"]
                 orig_msg = st.session_state.db[titulo]["msg_text"]
-                new_msg = f"{orig_msg}\n\n⚽ *Placar Final:* {placar
+                new_msg = f"{orig_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
+                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                              data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
+                st.success("Status atualizado!")
+
+            if col_b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
+            if col_b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
+            if col_b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
+
+# Layout principal
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
