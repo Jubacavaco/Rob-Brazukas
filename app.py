@@ -42,13 +42,17 @@ def renderizar_bloco(titulo):
             
             # Gráficos de Probabilidade
             st.write("📊 **Mercados:**")
-            c_g1, c_g2 = st.columns(2)
-            c_g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); c_g1.progress(min((p+5)/100, 1.0))
-            c_g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); c_g2.progress(min(p/100, 1.0))
+            # Grid 2x2 para os gráficos
+            g1, g2 = st.columns(2)
+            g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); g1.progress(min((p+5)/100, 1.0))
+            g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); g2.progress(min(p/100, 1.0))
+            
+            g3, g4 = st.columns(2)
+            g3.write(f"BTTS ({min(p-10, 100):.0f}%)"); g3.progress(max(min((p-10)/100, 1.0), 0.0))
+            g4.write(f"LTD ({min(100-p, 100):.0f}%)"); g4.progress(min((100-p)/100, 1.0))
             
             mercado = st.selectbox(f"Mercado ({titulo})", ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
             
-            # Mensagem completa conforme teu padrão anterior
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
             st.info(msg)
             
@@ -67,7 +71,6 @@ def renderizar_bloco(titulo):
             def registrar(status):
                 msg_id = st.session_state.get(f"id_{titulo}")
                 url = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-                # Adiciona o placar à mensagem original
                 novo_texto = st.session_state.get(f"msg_{titulo}") + f"\n\n⚽ *Placar:* {placar}\n🔄 *Status:* {status}"
                 requests.post(url, data={"chat_id": CHAT_ID, "message_id": msg_id, "text": novo_texto, "parse_mode": "Markdown"})
                 st.success("Atualizado!")
