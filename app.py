@@ -13,7 +13,7 @@ except Exception:
     st.error("Erro: Não encontrei o ficheiro .streamlit/secrets.toml no GitHub ou o formato está errado.")
     st.stop()
 
-# Campos de entrada
+# Campos de entrada seguindo o que pediste
 camp = st.text_input("Campeonato")
 jogo = st.text_input("Jogo")
 mercado_p = st.text_input("Mercado Principal")
