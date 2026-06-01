@@ -34,6 +34,7 @@ def renderizar_bloco(titulo):
     hora = st.text_input("Horário", key=f"h_{titulo}")
     prob_manual = st.text_input("Probabilidade (%)", key=f"pr_{titulo}")
     
+    # CAMPOS DE PLACAR
     pm = st.text_input("Placar Momento", key=f"pm_{titulo}")
     pht = st.text_input("Placar HT", key=f"pht_{titulo}")
     pf = st.text_input("Placar Final", key=f"pf_{titulo}")
@@ -46,7 +47,18 @@ def renderizar_bloco(titulo):
     if f"probs_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
         sugestao = obter_sugestao(p15, p25, pbtts, pltd)
-        if sugestao != "Nenhum mercado recomendado": st.success(f"🎯 Sugestão: {sugestao}")
+        
+        if sugestao != "Nenhum mercado recomendado":
+            st.success(f"🎯 Sugestão: {sugestao}")
+        else:
+            st.warning("⚠️ Nenhum mercado recomendado")
+        
+        # GRÁFICOS (MANTIDOS COMO VOCÊ PEDIU)
+        st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
+        st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
+        st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
+        st.progress(min(max(pc/100, 0), 1), text=f"Vit. {casa if casa else 'Casa'}: {pc:.1f}%")
+        st.progress(min(max(pv/100, 0), 1), text=f"Vit. {vis if vis else 'Visitante'}: {pv:.1f}%")
         
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
@@ -73,8 +85,8 @@ def renderizar_bloco(titulo):
         
         def atualizar_telegram(status):
             msg_id = st.session_state[f"id_{titulo}"]
-            # Constrói a mensagem acumulando os dados
-            txt = (f"{st.session_state[f'msg_base_{titulo}']}\n\n"
+            msg_base = st.session_state.get(f"msg_base_{titulo}", "Alerta de Entrada")
+            txt = (f"{msg_base}\n\n"
                    f"⚽ Momento: {pm}\n"
                    f"⚽ HT: {pht}\n"
                    f"⚽ Final: {pf}\n\n"
