@@ -1,14 +1,14 @@
 import streamlit as st
 import requests
-import re
-import pandas as pd
 
 st.set_page_config(page_title="Robô Brazukas", layout="wide")
+st.title("🤖 Painel Brazukas - Gestão de Sinais")
 
-# --- CONFIGURAÇÃO SIDEBAR ---
+# --- CONFIGURAÇÃO SIDEBAR (DADOS OCULTOS) ---
 st.sidebar.header("⚙️ Configurações")
+# O parâmetro type="password" oculta o que você digita
 token = st.sidebar.text_input("🔑 Token Telegram", type="password")
-chat_id = st.sidebar.text_input("📢 ID Canal")
+chat_id = st.sidebar.text_input("📢 ID Canal", type="password")
 
 st.sidebar.header("📅 Dados do Jogo")
 campeonato = st.sidebar.text_input("🏆 Campeonato")
@@ -16,7 +16,7 @@ time_casa = st.sidebar.text_input("🆚 Time Casa")
 time_visitante = st.sidebar.text_input("🆚 Time Visitante")
 horario = st.sidebar.text_input("⏰ Horário")
 
-st.sidebar.header("📊 Odds")
+st.sidebar.header("📊 Odds (Para Decisão)")
 odd_o15 = st.sidebar.number_input("Odd O1.5", 1.0)
 odd_btts = st.sidebar.number_input("Odd BTTS", 1.0)
 odd_o25 = st.sidebar.number_input("Odd O2.5", 1.0)
@@ -27,21 +27,23 @@ def get_msg(tipo, camp, casa, vis, hora):
     rodape = "\n\n⚠️ Aposte com responsabilidade. Não há garantias de lucro."
     
     if tipo == "LTD":
-        return base + "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Contra o Empate (LTD)\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada Ao vivo!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição LTD." + rodape
+        corpo = "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Contra o Empate (LTD)\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada Ao vivo!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição LTD."
     elif tipo == "BTTS":
-        return base + "🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas - SIM\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição Ambas Sim." + rodape
+        corpo = "🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas - SIM\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça na posição Ambas Sim."
     elif tipo == "Casa Vence":
-        return base + "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Casa Vence\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Essa é uma entrada para FT (Full Time)." + rodape
+        corpo = "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Casa Vence\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Essa é uma entrada para FT (Full Time)."
     elif tipo == "Over 1.5":
-        return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 1.5 FT\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça no Over 1.5 FT." + rodape
+        corpo = "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 1.5 FT\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 1 gol no HT, sugiro que saia do mercado com um pequeno lucro.\n* Se terminar 0 x 0 no HT, permaneça no Over 1.5 FT."
     elif tipo == "Over 2.5":
-        return base + "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 2.5 FT\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 2 gols no HT, sugiro que saia do mercado com um pequeno lucro.\n* Essa é uma entrada para FT (Full Time)." + rodape
+        corpo = "🎯 *Mercado:* Over Gols\n💥 *Prognóstico:* 2.5 FT\n⏰ *Horário:* " + hora + "\n\n📌 Entrada recomendada antes do início!\n\n⚽ **Gestão de Jogo (Ao Vivo):**\n* Se houver 2 gols no HT, sugiro que saia do mercado com um pequeno lucro.\n* Essa é uma entrada para FT (Full Time)."
+    
+    return base + corpo + rodape
 
-# --- LÓGICA DE EXECUÇÃO ---
+# --- LÓGICA DE ENVIO ---
 lista_jogos = st.text_area("📋 Cole aqui a lista de jogos:")
 
-if st.button("🚀 Analisar e Enviar"):
-    # Exemplo de lógica de escolha (substitua pelos seus cálculos)
+if st.button("🚀 Analisar e Enviar Sinal"):
+    # Lógica simples: ajuste aqui conforme seu critério de odds
     if odd_o25 < 2.0: tipo = "Over 2.5"
     elif odd_btts < 1.9: tipo = "BTTS"
     else: tipo = "LTD"
@@ -55,10 +57,13 @@ if st.button("🚀 Analisar e Enviar"):
     if resp.get("ok"):
         st.session_state.msg_id = resp["result"]["message_id"]
         st.session_state.ultima_msg = msg_final
-        st.success("Sinal enviado!")
+        st.success("Sinal enviado com sucesso!")
+    else:
+        st.error(f"Erro: {resp.get('description')}")
 
-# --- ATUALIZAÇÃO ---
+# --- ATUALIZAÇÃO DE RESULTADO (EDIÇÃO) ---
 if "msg_id" in st.session_state and st.session_state.msg_id:
+    st.divider()
     st.subheader("🎯 Registrar Resultado")
     c1, c2, c3 = st.columns(3)
     
@@ -67,7 +72,7 @@ if "msg_id" in st.session_state and st.session_state.msg_id:
         url = f"https://api.telegram.org/bot{token}/editMessageText"
         payload = {"chat_id": chat_id, "message_id": st.session_state.msg_id, "text": nova_msg, "parse_mode": "Markdown"}
         requests.post(url, data=payload)
-        st.success("Atualizado!")
+        st.success(f"Telegram atualizado para {status_texto}!")
 
     if c1.button("✅ GREEN"): atualizar("✅✅ GREEN!!")
     if c2.button("❌ RED"): atualizar("❌❌ RED!")
