@@ -3,7 +3,7 @@ import requests
 import re
 
 st.set_page_config(page_title="Robô Brazukas Dual", layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Dual Profissional")
+st.title("🤖 Painel Brazukas - Gestão com Gráficos")
 
 token = st.sidebar.text_input("Token Telegram", type="password")
 chat_id = st.sidebar.text_input("ID Canal", type="password")
@@ -24,18 +24,31 @@ def renderizar_bloco(titulo):
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-        prob = calcular_probabilidade(lista)
-        st.session_state[f"prob_{titulo}"] = prob
-        st.write(f"📈 **Probabilidade:** {prob:.1f}%")
-        st.progress(min(prob/100, 1.0))
+        p = calcular_probabilidade(lista)
+        st.session_state[f"prob_{titulo}"] = p
         
-        tipo = "LTD" if prob >= 51 else None
-        if prob >= 55: tipo = "BTTS"
-        if prob >= 70: tipo = "Over 1.5 FT"
-        if prob >= 65: tipo = "Over 2.5 FT"
+        # --- EXIBIÇÃO DO GRÁFICO (Visualização de todos os mercados) ---
+        st.write("📊 **Monitor de Probabilidades:**")
+        col_g1, col_g2 = st.columns(2)
+        with col_g1:
+            st.caption("Over 1.5 FT")
+            st.progress(min((p + 5)/100, 1.0))
+            st.caption("Over 2.5 FT")
+            st.progress(min(p/100, 1.0))
+        with col_g2:
+            st.caption("Ambas (BTTS)")
+            st.progress(min((p - 10)/100, 1.0))
+            st.caption("LTD")
+            st.progress(min((p - 15)/100, 1.0))
+        
+        # Lógica de seleção automática
+        tipo = "LTD" if p >= 51 else None
+        if p >= 55: tipo = "BTTS"
+        if p >= 70: tipo = "Over 1.5 FT"
+        if p >= 65: tipo = "Over 2.5 FT"
         
         if tipo:
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n📌 Entrada recomendada (Probabilidade > {prob:.1f}%!)\n\n⚠️ Aposte com responsabilidade."
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n📌 Entrada recomendada (Confiança: {p:.1f}%)\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
             st.session_state[f"msg_{titulo}"] = msg
         else:
@@ -53,17 +66,4 @@ def renderizar_bloco(titulo):
         st.write("---")
         st.write(f"**Controle de {titulo}**")
         c1, c2, c3 = st.columns(3)
-        
-        def editar(status):
-            msg_final = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-            payload = {"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": msg_final, "parse_mode": "Markdown"}
-            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", data=payload)
-            st.rerun()
-
-        if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("✅ GREEN!!")
-        if c2.button("❌ RED", key=f"r_{titulo}"): editar("❌ RED!")
-        if c3.button("🔄 DEV", key=f"d_{titulo}"): editar("🔄 DEVOLVIDA")
-
-col1, col2 = st.columns(2)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
+        def editar(
