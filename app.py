@@ -35,17 +35,16 @@ def renderizar_bloco(titulo):
         if prob >= 65: tipo = "Over 2.5 FT"
         
         if tipo:
-            # Mensagem completa restaurada
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n📌 Entrada recomendada (Probabilidade > {prob:.1f}%!)\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
             st.session_state[f"msg_{titulo}"] = msg
         else:
-            st.warning("Probabilidade abaixo do limite para entrada.")
+            st.warning("Probabilidade abaixo do limite.")
 
     if f"msg_{titulo}" in st.session_state:
         if st.button(f"🚀 Enviar {titulo}", key=f"en_{titulo}"):
-            p = {"chat_id": chat_id, "text": st.session_state[f"msg_{titulo}"], "parse_mode": "Markdown"}
-            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=p).json()
+            payload = {"chat_id": chat_id, "text": st.session_state[f"msg_{titulo}"], "parse_mode": "Markdown"}
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
             if r.get("ok"): 
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
                 st.rerun()
@@ -54,6 +53,17 @@ def renderizar_bloco(titulo):
         st.write("---")
         st.write(f"**Controle de {titulo}**")
         c1, c2, c3 = st.columns(3)
+        
         def editar(status):
-            txt = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-            d = {"chat_id": chat_id, "message_id": st.session_state[f"id
+            msg_final = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
+            payload = {"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": msg_final, "parse_mode": "Markdown"}
+            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", data=payload)
+            st.rerun()
+
+        if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("✅ GREEN!!")
+        if c2.button("❌ RED", key=f"r_{titulo}"): editar("❌ RED!")
+        if c3.button("🔄 DEV", key=f"d_{titulo}"): editar("🔄 DEVOLVIDA")
+
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
