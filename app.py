@@ -65,7 +65,8 @@ def renderizar_bloco(titulo):
                     f"🎯 Mercado: {tipo}\n"
                     f"📈 Probabilidade: {prob}%\n"
                     f"⏰ Horário: {hora}\n\n"
-                    "⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
+                    "🔞 Aposte com responsabilidade. \n"
+                    "⚠️ Não há garantias de lucro.")
         
         st.info(f"Prévia:\n{msg_base}")
         
@@ -84,13 +85,11 @@ def renderizar_bloco(titulo):
             msg_id = st.session_state[f"id_{titulo}"]
             msg_base = st.session_state.get(f"msg_base_{titulo}", "")
             
-            # Lógica de substituição
             if modo == "MOMENTO":
                 txt_placar = f"\n⚽ Momento: {pm}"
             elif modo == "HT":
                 txt_placar = f"\n⚽ HT: {pht}"
             elif modo == "FINAL":
-                # Mantém o HT e adiciona o Final
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
             else:
                 txt_placar = "\n❌ Resultado: RED"
