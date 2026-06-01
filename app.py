@@ -25,7 +25,7 @@ def renderizar_bloco(titulo):
     casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
     vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
-    placar = st.text_input(f"Placar Final ({titulo})", key=f"p_{titulo}") # A caixinha está aqui
+    placar = st.text_input(f"Placar Final ({titulo})", key=f"p_{titulo}")
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
     # ANÁLISE
@@ -45,7 +45,6 @@ def renderizar_bloco(titulo):
         st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)"); st.progress(max(0, p-10)/100)
         st.write(f"LTD ({max(0, 100-p):.1f}%)"); st.progress(max(0, 100-p)/100)
         
-        # CAMPO DE PROBABILIDADE
         prob_val = st.text_input("Probabilidade (%)", value=str(st.session_state.get(f"val_prob_{titulo}", "")), key=f"inp_prob_{titulo}")
         
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
@@ -53,8 +52,8 @@ def renderizar_bloco(titulo):
         
         st.write(f"🎯 Mercado: **{tipo}** | Probabilidade: **{prob_val}%**")
         
-        # MENSAGEM FINAL
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n⚽ *Placar Final:* {placar}\n\n⚠️ Aposte com responsabilidade."
+        # MENSAGEM ORIGINAL (SEM PLACAR)
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
@@ -71,7 +70,8 @@ def renderizar_bloco(titulo):
         st.write("---")
         c1, c2, c3 = st.columns(3)
         def editar_telegram(status):
-            new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
+            # Adiciona o placar apenas no momento da edição
+            new_msg = st.session_state[f"msg_{titulo}"] + f"\n⚽ *Placar Final:* {placar}\n\n🔄 *Status:* {status}"
             requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
                           data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
             st.success(f"Registrado: {status}")
