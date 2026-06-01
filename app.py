@@ -16,28 +16,22 @@ def calcular_probabilidade(texto):
     p_casa = min(media * 12 + 10, 80.0)
     p_vis = min((10 - media) * 8 + 10, 80.0)
     p_emp = 100.0 - p_casa - p_vis
-    p_gols = min(media * 20, 100.0)
-    return float(p_casa), float(p_vis), float(p_emp), float(p_gols)
+    # PG é a base para o Over 2.5
+    pg = min(media * 20, 100.0)
+    # Porcentagens calculadas baseadas nas suas regras
+    p_15 = min(pg + 15, 100.0)
+    p_25 = pg
+    p_btts = pg - 10 
+    p_ltd = 100 - pg
+    return float(p_casa), float(p_vis), float(p_emp), p_15, p_25, p_btts, p_ltd
 
-def obter_sugestao(pg, p_casa, p_vis):
-    """
-    Regra de Ouro: Identifica qual mercado oferece a melhor margem
-    dentro das metas de probabilidade estabelecidas.
-    """
-    # Prioridade para Over 2.5 (Meta >= 65%)
-    if pg >= 65:
-        return "Over 2.5 FT"
-    # Se bater a meta de 51% para Gols, prioriza o que paga melhor (Over 1.5)
-    elif pg >= 51:
-        return "Over 1.5 FT"
-    # Prioridade para BTTS (Meta >= 51%)
-    elif pg >= 51:
-        return "Ambas Marcam (BTTS)"
-    # Prioridade para LTD (Meta >= 51%)
-    elif pg >= 51:
-        return "LTD"
-    else:
-        return "Aguardar Oportunidade"
+def obter_sugestao(p15, p25, pbtts, pltd):
+    # Regras rigorosas de recomendação
+    if p25 >= 65: return "Over 2.5 FT"
+    elif p15 >= 75: return "Over 1.5 FT"
+    elif pbtts >= 51: return "Ambas Marcam (BTTS)"
+    elif pltd >= 51: return "LTD"
+    else: return "Nenhuma"
 
 def renderizar_bloco(titulo):
     with st.container(border=True):
@@ -49,44 +43,37 @@ def renderizar_bloco(titulo):
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-            pc, pv, pe, pg = calcular_probabilidade(lista)
-            st.session_state[f"probs_{titulo}"] = (pc, pv, pe, pg)
+            pc, pv, pe, p15, p25, pbtts, pltd = calcular_probabilidade(lista)
+            st.session_state[f"probs_{titulo}"] = (pc, pv, pe, p15, p25, pbtts, pltd)
             st.rerun()
         
         if f"probs_{titulo}" in st.session_state:
-            pc, pv, pe, pg = st.session_state[f"probs_{titulo}"]
-            sugestao = obter_sugestao(pg, pc, pv)
+            pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
+            sugestao = obter_sugestao(p15, p25, pbtts, pltd)
             
-            st.warning(f"🎯 **APOSTA RECOMENDADA (Melhor Investimento): {sugestao}**")
+            if sugestao != "Nenhuma":
+                st.warning(f"🎯 **APOSTA RECOMENDADA: {sugestao}**")
+            else:
+                st.error("⚠️ Nenhum mercado atingiu a meta mínima.")
             
-            # Gráficos
-            st.write("📊 **Probabilidades em Tempo Real:**")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.progress(min((pg+5)/100, 1.0), text=f"Over 1.5 ({min(pg+5, 100):.0f}%)")
-                st.progress(min(pg/100, 1.0), text=f"Over 2.5 ({pg:.0f}%)")
-                st.progress(min((pg-10)/100, 1.0), text=f"BTTS ({max(pg-10, 0):.0f}%)")
-            with col2:
-                st.progress(min((100-pg)/100, 1.0), text=f"LTD ({max(100-pg, 0):.0f}%)")
-                st.progress(pc/100, text=f"Vitória {casa} ({pc:.1f}%)")
-                st.progress(pv/100, text=f"Vitória {vis} ({pv:.1f}%)")
-            
+            st.write("📊 **Probabilidades Calculadas:**")
+            st.progress(p15/100, text=f"Over 1.5 ({p15:.0f}%)")
+            st.progress(p25/100, text=f"Over 2.5 ({p25:.0f}%)")
+            st.progress(pbtts/100, text=f"BTTS ({pbtts:.0f}%)")
+            st.progress(pltd/100, text=f"LTD ({pltd:.0f}%)")
+
             placar = st.text_input("Placar Final", key=f"p_{titulo}")
             mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
             tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
             
-            display = tipo
-            if "Casa Vence" in tipo: display = f"Match Odd's: {casa}"
-            elif "Visitante Vence" in tipo: display = f"Match Odd's: {vis}"
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {display}\n📈 Probabilidade: {pg:.1f}%\n⏰ {hora}"
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 % Mercado: {p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd:.1f}%\n⏰ {hora}"
             
             st.info(f"**Prévia da mensagem:**\n{msg}")
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
                 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
                 res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
-                if res.get("ok"):
+                if res.ok:
                     st.session_state[f"msg_enviada_{titulo}"] = msg
                     st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                     st.rerun()
