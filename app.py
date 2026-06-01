@@ -81,13 +81,12 @@ def renderizar_bloco(titulo):
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            # Cálculo das porcentagens de cada mercado
+            # Cálculo percentual
             v15 = min(p + 5, 100)
             v25 = min(p, 100)
             vBTTS = min(p + 2, 100)
             vLTD = min(100 - p, 100)
             
-            # Exibir gráficos com números
             cols = st.columns(4)
             cols[0].write(f"Over 1.5: **{v15:.0f}%**")
             cols[0].progress(v15/100)
@@ -102,9 +101,10 @@ def renderizar_bloco(titulo):
                                             ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
                                             key=f"sel_{titulo}")
             
-            # Lógica automática
+            # Lógica automática com prioridade Over 2.5
             if mercado_escolhido == "Automático":
-                if p >= 70: mercado_final = "Over 1.5 FT"
+                if p >= 80: mercado_final = "Over 2.5 FT"
+                elif p >= 65: mercado_final = "Over 1.5 FT"
                 elif p >= 50: mercado_final = "Ambas Marcam (BTTS)"
                 else: mercado_final = "LTD"
             else:
