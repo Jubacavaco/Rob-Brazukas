@@ -19,7 +19,7 @@ def calcular_probabilidade(texto):
     if len(gols) < 2: return 0
     
     media = sum(gols) / len(gols)
-    # Multiplicador ajustado para 65
+    # Multiplicador 65
     return min(media * 65, 100)
 
 def renderizar_bloco(titulo):
@@ -41,14 +41,18 @@ def renderizar_bloco(titulo):
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
         
-        # GRÁFICOS VISUAIS
+        # TODOS OS GRÁFICOS SEMPRE VISÍVEIS
         st.write("📊 **Acompanhamento Visual:**")
         st.write(f"Over 1.5 FT ({min(p+5, 100):.1f}%)")
         st.progress(min((p+5)/100, 1.0))
         st.write(f"Over 2.5 FT ({min(p, 100):.1f}%)")
         st.progress(min(p/100, 1.0))
+        st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)")
+        st.progress(max(0, p-10)/100)
+        st.write(f"LTD ({max(0, 100-p):.1f}%)")
+        st.progress(max(0, 100-p)/100)
         
-        # SELEÇÃO DE MERCADO (Linha única para evitar erro)
+        # SELEÇÃO DE MERCADO
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         
         tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
