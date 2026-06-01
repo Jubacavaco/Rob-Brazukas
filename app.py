@@ -3,7 +3,7 @@ import requests
 import re
 
 st.set_page_config(layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Total")
+st.title("🤖 Sistema Brazukas Top Tisp")
 
 # Sidebar para credenciais
 token = st.sidebar.text_input("Token Telegram", type="password")
