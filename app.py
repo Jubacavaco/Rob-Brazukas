@@ -87,4 +87,4 @@ def renderizar_bloco(titulo):
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
+with col2: renderizar_bloco("JOGO_B")"  
