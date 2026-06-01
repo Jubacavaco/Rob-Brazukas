@@ -3,7 +3,7 @@ import requests
 import re
 
 # Configuração da página
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Painel Brazukas")
 st.title("🤖 Painel Brazukas - Gestão Total")
 
 # Sidebar - Configurações
@@ -15,16 +15,14 @@ def calcular_probabilidade(texto):
     numeros = re.findall(r'\d+', texto)
     gols = [int(n) for n in numeros if int(n) <= 10]
     if len(gols) < 2: return 0
-    # Normalização: multiplicador ajustado para a média de gols
     media = sum(gols) / len(gols)
     prob = media * 20 
-    return min(prob, 100) # Garante que nunca passa de 100%
+    return min(prob, 100)
 
 def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Inputs principais
         col_c1, col_c2 = st.columns(2)
         camp = col_c1.text_input(f"Campeonato", key=f"c_{titulo}")
         hora = col_c2.text_input(f"Horário", key=f"h_{titulo}")
@@ -42,12 +40,20 @@ def renderizar_bloco(titulo):
             p_manual = st.text_input("Ajustar Probabilidade (%)", value=f"{p_base:.1f}", key=f"ajuste_{titulo}")
             p = min(float(p_manual), 100) if p_manual else p_base
             
-            st.write("📊 **Acompanhamento Visual:**")
+            # --- GRÁFICOS VISUAIS COMPLETOS ---
+            st.write("📊 **Acompanhamento de Mercado:**")
+            
+            # Linha 1
             col_g1, col_g2 = st.columns(2)
-            col_g1.write(f"Over 1.5 FT ({min(p+5, 100):.0f}%)")
-            col_g1.progress(min((p+5)/100, 1.0))
-            col_g2.write(f"Over 2.5 FT ({min(p, 100):.0f}%)")
-            col_g2.progress(min(p/100, 1.0))
+            col_g1.write(f"Over 1.5 FT ({min(p+5, 100):.0f}%)"); col_g1.progress(min((p+5)/100, 1.0))
+            col_g2.write(f"Over 2.5 FT ({min(p, 100):.0f}%)"); col_g2.progress(min(p/100, 1.0))
+            
+            # Linha 2
+            col_g3, col_g4 = st.columns(2)
+            btts_val = max(0, p - 10)
+            ltd_val = max(0, 100 - p)
+            col_g3.write(f"Ambas Marcam (BTTS) ({btts_val:.0f}%)"); col_g3.progress(btts_val/100)
+            col_g4.write(f"LTD ({ltd_val:.0f}%)"); col_g4.progress(ltd_val/100)
             
             mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
             tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
