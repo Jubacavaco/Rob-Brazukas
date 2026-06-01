@@ -31,7 +31,6 @@ def renderizar_bloco(titulo):
         vis = st.text_input("Visitante", key=f"v_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
-        # Botão para calcular
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
             st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
@@ -41,12 +40,16 @@ def renderizar_bloco(titulo):
             prob_valor = st.number_input("Probabilidade (%)", value=float(st.session_state[f"prob_{titulo}"]), key=f"p_val_{titulo}")
             placar = st.text_input("Placar Final (para Green/Red)", key=f"p_{titulo}")
             
-            # Gráficos de visualização
             p = prob_valor
+            # Gráficos de todos os mercados
             st.write("📊 **Mercados:**")
-            col_g1, col_g2 = st.columns(2)
-            col_g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); col_g1.progress(min((p+5)/100, 1.0))
-            col_g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); col_g2.progress(min(p/100, 1.0))
+            col1, col2 = st.columns(2)
+            col1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); col1.progress(min((p+5)/100, 1.0))
+            col2.write(f"O 2.5 ({min(p, 100):.0f}%)"); col2.progress(min(p/100, 1.0))
+            
+            col3, col4 = st.columns(2)
+            col3.write(f"BTTS ({min(p-10, 100):.0f}%)"); col3.progress(max(min((p-10)/100, 1.0), 0.0))
+            col4.write(f"LTD ({min(100-p, 100):.0f}%)"); col4.progress(min((100-p)/100, 1.0))
 
             # Escolha do Mercado
             sugestao = "Over 1.5 FT" if p >= 70 else "LTD"
@@ -71,7 +74,6 @@ def renderizar_bloco(titulo):
             def registrar(status):
                 msg_id = st.session_state.get(f"id_{titulo}")
                 url_edit = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-                # Inclui a probabilidade que estava no campo editável
                 novo_texto = st.session_state.get(f"msg_{titulo}") + f"\n\n⚽ *Placar:* {st.session_state.get(f'p_{titulo}', '')}\n🔄 *Status:* {status}"
                 requests.post(url_edit, data={"chat_id": CHAT_ID, "message_id": msg_id, "text": novo_texto, "parse_mode": "Markdown"})
                 st.success("Atualizado!")
