@@ -60,8 +60,41 @@ def renderizar_bloco(titulo):
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
         
-        # MENSAGEM SEM O PROGNÓSTICO
+        # MENSAGEM CORRIGIDA
         msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
-               f"🎯
+               f"🎯 Mercado: {tipo}\n"
+               f"📈 Probabilidade: {prob}%\n"
+               f"⏰ Horário: {hora}\n\n"
+               "⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
+        
+        st.info(f"Prévia:\n{msg}")
+        
+        if st.button("🚀 ENVIAR", key=f"en_{titulo}", type="primary"):
+            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", 
+                                data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+            if res.get("ok"):
+                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                st.session_state[f"msg_{titulo}"] = msg
+                st.success("Enviado!")
+
+    if f"id_{titulo}" in st.session_state:
+        st.write("---")
+        c1, c2, c3 = st.columns(3)
+        def editar(status):
+            msg_id = st.session_state[f"id_{titulo}"]
+            txt = st.session_state[f"msg_{titulo}"] + f"\n\n⚽ Placar Final: {placar_final}\n🔄 Status: {status}"
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
+                          data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
+            st.success(f"Status: {status}")
+
+        if c1.button("✅", key=f"g_{titulo}"): editar("GREEN ✅")
+        if c2.button("❌", key=f"r_{titulo}"): editar("RED ❌")
+        if c3.button("🔄", key=f"d_{titulo}"): editar("DEVOLVIDA 🔄")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
+with col3: renderizar_bloco("JOGO_C")
+with col4: renderizar_bloco("JOGO_D")
