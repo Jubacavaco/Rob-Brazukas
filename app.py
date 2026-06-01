@@ -4,19 +4,24 @@ import re
 
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
-# CSS para um look profissional (bordas arredondadas e sombras suaves)
+# CSS para garantir que tudo fique visível e organizado
 st.markdown("""
     <style>
     .stApp { background-color: #f0f2f6; }
     .css-1r6slp0 { padding: 1rem; }
-    div[data-testid="stMetricValue"] { font-size: 20px !important; }
-    .block-container { padding-top: 2rem; }
-    .stButton>button { border-radius: 8px; width: 100%; border: 1px solid #ccc; }
     .stTextInput>div>div>input { border-radius: 8px; }
+    .stButton>button { border-radius: 8px; width: 100%; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #1a2a6c;'>⚽ Brazukas Master Dashboard</h1>", unsafe_allow_html=True)
+# SIDEBAR: Onde ficam os dados sensíveis (Sempre visível)
+with st.sidebar:
+    st.title("⚙️ Configurações")
+    token = st.text_input("Token Telegram", type="password")
+    chat_id = st.text_input("ID Canal", type="password")
+    st.info("Preencha para habilitar o envio.")
+
+st.title("⚽ Brazukas Master Dashboard")
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b[0-9]\b', re.sub(r'\d{2}\.\d{2}\.\d{2}', '', texto))
@@ -25,32 +30,32 @@ def calcular_probabilidade(texto):
     return min((sum(gols) / len(gols)) * 65, 100)
 
 def renderizar_bloco(titulo):
-    # Usando st.expander ou containers para separar o input da análise
     with st.container():
-        st.markdown(f"### 🏟️ {titulo}")
+        st.markdown(f"---")
+        st.subheader(f"🏟️ {titulo}")
         
-        # Grid de inputs compacto
+        # Inputs organizados
         col1, col2, col3 = st.columns([2, 1, 1])
-        camp = col1.text_input("Campeonato", key=f"c_{titulo}", placeholder="Ex: Premier League")
-        hora = col2.text_input("Horário", key=f"h_{titulo}", placeholder="15:00")
-        placar = col3.text_input("Placar", key=f"p_{titulo}", placeholder="0-0")
+        camp = col1.text_input("Campeonato", key=f"c_{titulo}")
+        hora = col2.text_input("Horário", key=f"h_{titulo}")
+        placar = col3.text_input("Placar", key=f"p_{titulo}")
         
         c4, c5 = st.columns(2)
-        casa = c4.text_input("Time Casa", key=f"ca_{titulo}")
-        vis = c5.text_input("Time Visitante", key=f"vi_{titulo}")
+        casa = c4.text_input("Casa", key=f"ca_{titulo}")
+        vis = c5.text_input("Visitante", key=f"vi_{titulo}")
         
         lista = st.text_area("Lista de jogos (Histórico)", key=f"l_{titulo}", height=70)
         
+        # Botão de análise
         if st.button(f"Analisar {titulo}", key=f"btn_{titulo}"):
             st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
 
-        # Área de Resultados (só aparece após análise)
+        # Área de resultados sempre pronta a ser exibida
         if f"res_{titulo}" in st.session_state:
             p = st.session_state[f"res_{titulo}"]
-            st.markdown("---")
             
-            # Gráficos em colunas organizadas
+            # Gráficos em linha
             cols = st.columns(4)
             mercados = ["O 1.5", "O 2.5", "BTTS", "LTD"]
             valores = [min(p+5, 100), min(p, 100), min(p+2, 100), min(100-p, 100)]
@@ -62,11 +67,17 @@ def renderizar_bloco(titulo):
             # Controlo de Envio
             m_sel = st.selectbox("Mercado de Envio", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
             
-            # Botão de Ação com destaque
-            if st.button(f"🚀 Enviar Alerta {titulo}", key=f"send_{titulo}", type="primary"):
-                st.success("Alerta processado e enviado!")
+            msg = f"🚨 *Alerta Brazukas* 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {m_sel}\n📈 Prob: {p:.1f}%"
+            st.info(msg)
+            
+            if st.button(f"🚀 ENVIAR {titulo}", key=f"send_{titulo}", type="primary"):
+                if token and chat_id:
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
+                    st.success("Enviado!")
+                else:
+                    st.error("Token ou ID em falta na barra lateral!")
 
-# Layout Principal
+# Layout Lado a Lado
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO A")
 with col_b: renderizar_bloco("JOGO B")
