@@ -5,6 +5,7 @@ import re
 st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
 st.title("🤖 Sistema Brazukas Top Tips")
 
+# Configuração de Secrets
 TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
 
@@ -31,24 +32,26 @@ def renderizar_bloco(titulo):
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
             pc, pv, pe, pg = calcular_probabilidade(lista)
             st.session_state[f"probs_{titulo}"] = (pc, pv, pe, pg)
+            st.rerun() # Recarrega para mostrar os gráficos
         
-        if f"probs_{titulo}" in st.session_state:
-            pc, pv, pe, pg = st.session_state[f"probs_{titulo}"]
+        # Correção do erro: usa .get para evitar o erro se a chave não existir
+        probs = st.session_state.get(f"probs_{titulo}")
+        
+        if probs:
+            pc, pv, pe, pg = probs
             
-            # Gráficos de Gols
+            # Gráficos
             st.write("📊 **Análise de Gols:**")
             st.write(f"O 1.5 ({min(pg+5, 100):.0f}%)"); st.progress(min(max((pg+5)/100, 0.0), 1.0))
             st.write(f"O 2.5 ({pg:.0f}%)"); st.progress(min(max(pg/100, 0.0), 1.0))
             st.write(f"BTTS ({min(pg-10, 100):.0f}%)"); st.progress(min(max((pg-10)/100, 0.0), 1.0))
             st.write(f"LTD ({min(100-pg, 100):.0f}%)"); st.progress(min(max((100-pg)/100, 0.0), 1.0))
 
-            # Gráficos de Vitória
             st.write("🏆 **Match Odds:**")
             st.write(f"🏠 {casa}: {pc:.1f}%"); st.progress(min(max(pc/100, 0.0), 1.0))
             st.write(f"✈️ {vis}: {pv:.1f}%"); st.progress(min(max(pv/100, 0.0), 1.0))
             st.write(f"🤝 Empate: {pe:.1f}%"); st.progress(min(max(pe/100, 0.0), 1.0))
             
-            # Mercado e Placar
             placar = st.text_input("Placar Final", key=f"p_{titulo}")
             mercados = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
             tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
@@ -68,18 +71,10 @@ def renderizar_bloco(titulo):
                     res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
                     if res.get("ok"):
                         st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                        st.session_state[f"msg_{titulo}"] = msg
                         st.success("Enviado!")
                     else:
                         st.error(f"Erro Telegram: {res.get('description')}")
-        
-        # Status
-        if f"id_{titulo}" in st.session_state:
-            st.write("---")
-            if st.button("✅ GREEN", key=f"g_{titulo}"): st.success("Green!")
-            if st.button("❌ RED", key=f"r_{titulo}"): st.error("Red!")
 
-# Renderização das duas colunas
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
