@@ -19,18 +19,14 @@ DB_FILE = "dados_brazukas.json"
 def carregar_db():
     if os.path.exists(DB_FILE):
         try:
-            with open(DB_FILE, "r") as f:
-                return json.load(f)
-        except:
-            return {}
+            with open(DB_FILE, "r") as f: return json.load(f)
+        except: return {}
     return {}
 
 def salvar_db(data):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f)
+    with open(DB_FILE, "w") as f: json.dump(data, f)
 
-if "db" not in st.session_state:
-    st.session_state.db = carregar_db()
+if "db" not in st.session_state: st.session_state.db = carregar_db()
 
 st.markdown("<h1 style='text-align: center;'>🤖 Sistema Brazukas Top Tips</h1>", unsafe_allow_html=True)
 st.write("---")
@@ -52,8 +48,7 @@ def renderizar_bloco(titulo):
     with st.container():
         st.subheader(f"🏟️ {titulo}")
         
-        if titulo not in st.session_state.db:
-            st.session_state.db[titulo] = {}
+        if titulo not in st.session_state.db: st.session_state.db[titulo] = {}
         d = st.session_state.db[titulo]
         
         c1, c2 = st.columns(2)
@@ -69,51 +64,4 @@ def renderizar_bloco(titulo):
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
             p = calcular_probabilidade(lista)
-            mercado = "Over 1.5 FT" if p >= 70 else ("Ambas Marcam (BTTS)" if p >= 50 else "LTD")
             st.session_state.db[titulo].update({
-                "camp": camp, "hora": hora, "casa": casa, "vis": vis, 
-                "placar": placar, "lista": lista, "prob": p, "mercado": mercado
-            })
-            salvar_db(st.session_state.db)
-            st.rerun()
-        
-        if "prob" in st.session_state.db[titulo]:
-            p = st.session_state.db[titulo]["prob"]
-            mercado = st.session_state.db[titulo].get("mercado", "LTD")
-            
-            st.markdown("---")
-            st.metric("Probabilidade Calculada", f"{p:.1f}%")
-            st.write(f"🎯 **Mercado Sugerido:** {mercado}")
-            
-            prob_val = st.text_input("Ajustar Prob (%)", value=str(round(p, 1)), key=f"inp_{titulo}")
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
-            
-            st.info(msg)
-            
-            if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
-                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-                r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-                if r.get("ok"): 
-                    st.session_state.db[titulo].update({"id": r["result"]["message_id"], "msg": msg})
-                    salvar_db(st.session_state.db)
-                    st.rerun()
-
-        if "id" in st.session_state.db[titulo]:
-            st.markdown("---")
-            b1, b2, b3 = st.columns(3)
-            def editar_telegram(status, status_visual):
-                msg_id = st.session_state.db[titulo]["id"]
-                original_msg = st.session_state.db[titulo]["msg"]
-                new_msg = f"{original_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
-                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                              data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
-                st.success("Atualizado!")
-            
-            if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
-            if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
-            if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
-
-col_a, col_b = st.columns(2)
-with col_a: renderizar_bloco("JOGO_A")
-with col_b: renderizar_bloco("JOGO_B")
