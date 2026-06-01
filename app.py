@@ -24,7 +24,6 @@ def renderizar_bloco(titulo):
     casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
     vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
-    escanteios = st.text_input(f"Escanteios ({titulo})", key=f"esc_{titulo}")
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
     # ANÁLISE
@@ -36,16 +35,12 @@ def renderizar_bloco(titulo):
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
         
-        # GRÁFICOS CORRIGIDOS
+        # GRÁFICOS BASEADOS NA ANÁLISE DA LISTA (p)
         st.write("📊 **Acompanhamento Visual:**")
         st.write(f"Over 1.5 FT ({min(p+5, 100):.1f}%)")
         st.progress(min((p+5)/100, 1.0))
         st.write(f"Over 2.5 FT ({min(p, 100):.1f}%)")
         st.progress(min(p/100, 1.0))
-        st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)")
-        st.progress(max(0, p-10)/100)
-        st.write(f"LTD ({max(0, p-15):.1f}%)")
-        st.progress(max(0, p-15)/100)
         
         # MERCADO
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
@@ -54,8 +49,8 @@ def renderizar_bloco(titulo):
         
         st.write(f"🎯 Mercado selecionado: **{tipo}**")
         
-        # FORMATO DE MENSAGEM
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado Principal:* {tipo}\ncorner *Escanteios:* {escanteios}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        # MENSAGEM (Sem escanteios)
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
@@ -67,7 +62,7 @@ def renderizar_bloco(titulo):
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
                 st.rerun()
 
-    # CONTROLE DE RESULTADOS
+    # CONTROLE
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         c1, c2, c3 = st.columns(3)
