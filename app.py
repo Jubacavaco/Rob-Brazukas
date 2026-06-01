@@ -1,136 +1,65 @@
-28.05.26
-LIB
+import streamlit as st
+import requests
+import re
 
-Cruzeiro
+st.set_page_config(layout="wide")
+st.title("🤖 Painel Brazukas - Gestão Total")
 
-Barcelona
-4
-0
-V
-24.05.26
-SRA
+# Sidebar
+token = st.sidebar.text_input("Token Telegram", type="password")
+chat_id = st.sidebar.text_input("ID Canal", type="password")
 
-Cruzeiro
+def calcular_probabilidade(texto):
+    numeros = re.findall(r'\d+', texto)
+    gols = [int(n) for n in numeros if int(n) <= 10]
+    if len(gols) < 2: return 0
+    media = sum(gols) / len(gols)
+    return min(media * 35, 100)
 
-Chapecoense
-2
-1
-V
-19.05.26
-LIB
+def renderizar_bloco(titulo):
+    st.subheader(f"🏟️ {titulo}")
+    camp = st.text_input(f"Campeonato ({titulo})", key=f"c_{titulo}")
+    casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
+    vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
+    hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
+    lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
+    
+    if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
+        st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
+    
+    if f"prob_{titulo}" in st.session_state:
+        p = st.session_state[f"prob_{titulo}"]
+        st.write(f"📈 Probabilidade: {p:.1f}%")
+        
+        st.progress(min((p+5)/100, 1.0)); st.write(f"Over 1.5: {min(p+5, 100)}%")
+        st.progress(min(p/100, 1.0)); st.write(f"Over 2.5: {min(p, 100)}%")
+        
+        mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+        
+        tipo = ""
+        if mercado == "Automático":
+            if p >= 70: tipo = "Over 1.5 FT"
+            elif p >= 65: tipo = "Over 2.5 FT"
+            elif p >= 55: tipo = "Ambas Marcam (BTTS)"
+            else: tipo = "LTD"
+        else:
+            tipo = mercado
+            
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        st.info(msg)
+        
+        if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}"):
+            payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+            if r.get("ok"): 
+                st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
+                st.success("Enviado!")
 
-Boca Juniors
+    if f"id_{titulo}" in st.session_state:
+        st.write("---")
+        if st.button(f"✅ GREEN {titulo}", key=f"g_{titulo}"): st.write("GREEN registrado.")
+        if st.button(f"❌ RED {titulo}", key=f"r_{titulo}"): st.write("RED registrado.")
 
-Cruzeiro
-1
-1
-E
-16.05.26
-SRA
-
-Palmeiras
-
-Cruzeiro
-1
-1
-E
-12.05.26
-COP
-
-Cruzeiro
-
-Goiás
-1
-0
-V
-
-Mostrar mais jogos
-Últimos jogos: Fluminense
-27.05.26
-LIB
-
-Fluminense
-
-La Guaira
-3
-1
-V
-23.05.26
-SRA
-
-Mirassol
-
-Fluminense
-1
-0
-D
-19.05.26
-LIB
-
-Fluminense
-
-Bolivar
-2
-1
-V
-16.05.26
-SRA
-
-Fluminense
-
-São Paulo
-2
-1
-V
-12.05.26
-COP
-
-Fluminense
-
-Operário
-2
-1
-V
-
-Mostrar mais jogos
-Confrontos diretos
-09.11.25
-SRA
-
-Cruzeiro
-
-Fluminense
-0
-0
-17.07.25
-SRA
-
-Fluminense
-
-Cruzeiro
-0
-2
-03.10.24
-SRA
-
-Fluminense
-
-Cruzeiro
-1
-0
-19.06.24
-SRA
-
-Cruzeiro
-
-Fluminense
-2
-0
-20.09.23
-SRA
-
-Fluminense
-
-Cruzeiro
-1
-0
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
