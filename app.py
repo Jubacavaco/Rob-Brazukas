@@ -82,24 +82,31 @@ def renderizar_bloco(titulo):
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         
-        def atualizar_telegram(status):
+        def atualizar_telegram(status, campo_atual, valor_campo):
             msg_id = st.session_state[f"id_{titulo}"]
             msg_base = st.session_state.get(f"msg_base_{titulo}", "")
-            txt = (f"{msg_base}\n\n"
-                   f"⚽ Momento: {pm}\n"
-                   f"⚽ HT: {pht}\n"
-                   f"⚽ Final: {pf}\n\n"
-                   f"🔄 STATUS ATUAL: *{status}*")
+            
+            # Recupera placares anteriores se já foram adicionados
+            txt_placar = st.session_state.get(f"txt_placar_{titulo}", "")
+            
+            # Adiciona o novo campo se o valor não estiver vazio
+            if valor_campo:
+                novo_campo = f"\n⚽ {campo_atual}: {valor_campo}"
+                if novo_campo not in txt_placar:
+                    txt_placar += novo_campo
+                    st.session_state[f"txt_placar_{titulo}"] = txt_placar
+            
+            txt = f"{msg_base}{txt_placar}\n\n🔄 STATUS ATUAL: *{status}*"
             
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
             st.success(f"Atualizado: {status}")
 
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢")
-        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢")
-        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅")
-        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌")
+        if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("EM ANDAMENTO 🟢", "Momento", pm)
+        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢", "HT", pht)
+        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "Final", pf)
+        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "Resultado", "RED")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
