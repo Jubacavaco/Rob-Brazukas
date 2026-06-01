@@ -66,7 +66,14 @@ def renderizar_bloco(titulo):
                 mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
                 tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
                 
-                msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 % Mercado: {p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd:.1f}%\n⏰ {hora}"
+                # MENSAGEM COMPLETA CONFORME SOLICITADO
+                msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+                       f"🏆 Campeonato: {camp}\n"
+                       f"🆚 Jogo: {casa} x {vis}\n"
+                       f"🎯 Mercado Principal: {tipo}\n"
+                       f"📊 Mercado Secundário (Escanteios/Prob): {p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd:.1f}%\n"
+                       f"⏰ Horário: {hora}")
+                
                 st.info(f"**Prévia da mensagem:**\n{msg}")
                 
                 if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
@@ -82,7 +89,7 @@ def renderizar_bloco(titulo):
             c1, c2, c3 = st.columns(3)
             def editar(status):
                 msg_id = st.session_state[f"id_{titulo}"]
-                txt = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
+                txt = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar Final: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
                 st.success("Atualizado!")
             if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("GREEN ✅")
