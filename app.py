@@ -7,28 +7,20 @@ import os
 # Configuração da página
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
+# Arquivo para salvar os dados
 DB_FILE = "dados_brazukas.json"
 
-# Função forçada de carregamento
 def carregar_db():
     if os.path.exists(DB_FILE):
         try:
-            with open(DB_FILE, "r") as f:
-                return json.load(f)
-        except:
-            return {}
+            with open(DB_FILE, "r") as f: return json.load(f)
+        except: return {}
     return {}
 
-# Função forçada de salvamento
 def salvar_db(data):
-    try:
-        with open(DB_FILE, "w") as f:
-            json.dump(data, f)
-    except Exception as e:
-        st.error(f"Erro ao salvar dados: {e}")
+    with open(DB_FILE, "w") as f: json.dump(data, f)
 
-if "db" not in st.session_state:
-    st.session_state.db = carregar_db()
+if "db" not in st.session_state: st.session_state.db = carregar_db()
 
 st.markdown("<h1 style='text-align: center; color: #2E86C1;'>🤖 Sistema Brazukas Top Tisp</h1>", unsafe_allow_html=True)
 st.markdown("---")
@@ -46,10 +38,9 @@ def calcular_probabilidade(texto):
     return min(media * 65, 100)
 
 def renderizar_bloco(titulo):
-    with st.container(border=True):
+    with st.container():
         st.subheader(f"🏟️ {titulo}")
         
-        # Garante que o dicionário existe
         if titulo not in st.session_state.db: st.session_state.db[titulo] = {}
         d = st.session_state.db[titulo]
         
@@ -71,38 +62,15 @@ def renderizar_bloco(titulo):
         if "prob" in st.session_state.db[titulo]:
             p = st.session_state.db[titulo]["prob"]
             st.markdown("---")
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n📈 *Probabilidade:* {round(p,1)}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+            
+            # Caixa de ajuste manual de porcentagem
+            prob_val = st.text_input("Ajustar Probabilidade (%)", value=str(round(p, 1)), key=f"inp_prob_{titulo}")
+            
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+            
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
                 payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
                 r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-                if r.get("ok"): 
-                    # Salvando ID e Mensagem com força
-                    st.session_state.db[titulo]["id"] = r["result"]["message_id"]
-                    st.session_state.db[titulo]["msg"] = msg
-                    salvar_db(st.session_state.db)
-                    st.rerun()
-
-        # Botões de controle
-        if "id" in st.session_state.db[titulo]:
-            st.markdown("---")
-            st.write(f"✅ Mensagem enviada (ID: {st.session_state.db[titulo]['id']})")
-            b1, b2, b3 = st.columns(3)
-            
-            def editar_telegram(status, status_visual):
-                mid = st.session_state.db[titulo]["id"]
-                orig = st.session_state.db[titulo]["msg"]
-                new_msg = f"{orig}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
-                res = requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                              data={"chat_id": chat_id, "message_id": mid, "text": new_msg, "parse_mode": "Markdown"}).json()
-                if res.get("ok"): st.success("Status atualizado no Telegram!")
-                else: st.error("Erro ao editar no Telegram!")
-
-            if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
-            if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
-            if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
-
-col1, col2 = st.columns(2)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
+                if r.get("
