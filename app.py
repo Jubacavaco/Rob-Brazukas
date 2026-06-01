@@ -6,11 +6,13 @@ import re
 st.set_page_config(layout="wide", page_title="Painel Brazukas")
 st.title("🤖 Painel Brazukas - Gestão Total")
 
-# Sidebar - Configurações Persistentes
-with st.sidebar:
-    st.header("⚙️ Configurações")
-    st.session_state['token'] = st.text_input("Token Telegram", value=st.session_state.get('token', ''), type="password")
-    st.session_state['chat_id'] = st.text_input("ID Canal", value=st.session_state.get('chat_id', ''), type="password")
+# Tenta carregar o Token e ID do "Secrets" automaticamente
+try:
+    TOKEN = st.secrets["token"]
+    CHAT_ID = st.secrets["chat_id"]
+except Exception:
+    st.error("❌ Erro: Não encontrei as credenciais no 'Secrets'. Configure-as no Settings do Streamlit.")
+    st.stop()
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\d+', texto)
@@ -46,10 +48,6 @@ def renderizar_bloco(titulo):
             c_g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); c_g1.progress(min((p+5)/100, 1.0))
             c_g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); c_g2.progress(min(p/100, 1.0))
             
-            c_g3, c_g4 = st.columns(2)
-            c_g3.write(f"BTTS ({max(0, p-10):.0f}%)"); c_g3.progress(max(0, p-10)/100)
-            c_g4.write(f"LTD ({max(0, 100-p):.0f}%)"); c_g4.progress(max(0, 100-p)/100)
-            
             mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
             tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
             
@@ -57,30 +55,24 @@ def renderizar_bloco(titulo):
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
-                t = st.session_state.get('token')
-                c = st.session_state.get('chat_id')
-                if t and c:
-                    res = requests.post(f"https://api.telegram.org/bot{t}/sendMessage", data={"chat_id": c, "text": msg, "parse_mode": "Markdown"}).json()
-                    if res.get("ok"):
-                        st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                        st.session_state[f"msg_{titulo}"] = msg
-                        st.rerun()
-                else:
-                    st.error("Preencha Token e ID na lateral!")
+                # Usa TOKEN e CHAT_ID que definimos lá em cima
+                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+                if res.get("ok"):
+                    st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                    st.session_state[f"msg_{titulo}"] = msg
+                    st.rerun()
 
-        # Edição de Status com verificação de segurança
+        # Edição de Status
         if f"id_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
             def editar(status):
                 msg_id = st.session_state.get(f"id_{titulo}")
                 if msg_id:
-                    requests.post(f"https://api.telegram.org/bot{st.session_state.get('token')}/editMessageText", 
-                                  data={"chat_id": st.session_state.get('chat_id'), "message_id": msg_id, 
+                    requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
+                                  data={"chat_id": CHAT_ID, "message_id": msg_id, 
                                         "text": st.session_state.get(f"msg_{titulo}", "") + f"\n⚽ *Placar:* {placar}\n\n🔄 *Status:* {status}", "parse_mode": "Markdown"})
                     st.success(f"Status atualizado!")
-                else:
-                    st.error("ID perdido. Reenvie o alerta.")
 
             if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("✅ GREEN!!")
             if c2.button("❌ RED", key=f"r_{titulo}"): editar("❌ RED!")
