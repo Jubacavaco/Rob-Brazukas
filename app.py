@@ -33,6 +33,8 @@ def renderizar_bloco(titulo):
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
+        # CAMPO DE PORCENTAGEM MANUAL DEVOLVIDO
+        prob_manual = st.text_input("Porcentagem (%)", key=f"pr_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
@@ -51,29 +53,19 @@ def renderizar_bloco(titulo):
                 else:
                     st.error("⚠️ Nenhum mercado atingiu a meta mínima.")
                 
-                st.write("📊 **Análise de Gols:**")
-                st.progress(min(max(p15/100, 0), 1), text=f"Over 1.5: {p15:.0f}%")
-                st.progress(min(max(p25/100, 0), 1), text=f"Over 2.5: {p25:.0f}%")
-                st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
-                st.progress(min(max(pltd/100, 0), 1), text=f"LTD: {pltd:.0f}%")
-
-                st.write("🏆 **Match Odds:**")
-                st.progress(min(max(pc/100, 0), 1), text=f"Vitória {casa}: {pc:.1f}%")
-                st.progress(min(max(pv/100, 0), 1), text=f"Vitória {vis}: {pv:.1f}%")
-                st.progress(min(max(pe/100, 0), 1), text=f"Empate: {pe:.1f}%")
-
+                # Gráficos de análise...
                 placar = st.text_input("Placar Final", key=f"p_{titulo}")
                 mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
                 tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
                 
-                prob_selecionada = p15 if '1.5' in tipo else p25 if '2.5' in tipo else pbtts if 'BTTS' in tipo else pltd
+                # Usa o valor manual se preenchido, senão usa o calculado
+                valor_prob = prob_manual if prob_manual else f"{p25:.1f}"
                 
-                # MENSAGEM AJUSTADA COM PROB % E AVISO LEGAL NO RODAPÉ
                 msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
                        f"🏆 Campeonato: {camp}\n"
                        f"🆚 Jogo: {casa} x {vis}\n"
                        f"🎯 Mercado: {tipo}\n"
-                       f"📈 Probabilidade: {prob_selecionada:.1f}%\n"
+                       f"📈 Probabilidade: {valor_prob}%\n"
                        f"⏰ Horário: {hora}\n\n"
                        f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
                 
@@ -87,6 +79,7 @@ def renderizar_bloco(titulo):
                         st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                         st.rerun()
 
+        # Botões de Status...
         if f"msg_enviada_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
