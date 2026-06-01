@@ -7,28 +7,33 @@ import os
 # Configuração da página
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
-# Arquivo para salvar os dados (Persistência)
 DB_FILE = "dados_brazukas.json"
 
+# Função forçada de carregamento
 def carregar_db():
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f:
-            try: return json.load(f)
-            except: return {}
+        try:
+            with open(DB_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
     return {}
 
+# Função forçada de salvamento
 def salvar_db(data):
-    with open(DB_FILE, "w") as f: json.dump(data, f)
+    try:
+        with open(DB_FILE, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        st.error(f"Erro ao salvar dados: {e}")
 
 if "db" not in st.session_state:
     st.session_state.db = carregar_db()
 
-# Título Estilizado
 st.markdown("<h1 style='text-align: center; color: #2E86C1;'>🤖 Sistema Brazukas Top Tisp</h1>", unsafe_allow_html=True)
 st.markdown("---")
 
 # Sidebar
-st.sidebar.header("⚙️ Configurações")
 token = st.sidebar.text_input("Token Telegram", type="password")
 chat_id = st.sidebar.text_input("ID Canal", type="password")
 
@@ -44,7 +49,7 @@ def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Recupera do banco ou cria vazio
+        # Garante que o dicionário existe
         if titulo not in st.session_state.db: st.session_state.db[titulo] = {}
         d = st.session_state.db[titulo]
         
@@ -54,7 +59,7 @@ def renderizar_bloco(titulo):
         
         casa = st.text_input(f"Time Casa", value=d.get("casa", ""), key=f"ca_{titulo}")
         vis = st.text_input(f"Time Visitante", value=d.get("vis", ""), key=f"v_{titulo}")
-        placar = st.text_input(f"Placar Final (Preencher após jogo)", value=d.get("placar", ""), key=f"p_{titulo}")
+        placar = st.text_input(f"Placar Final", value=d.get("placar", ""), key=f"p_{titulo}")
         lista = st.text_area(f"Lista de jogos", value=d.get("lista", ""), key=f"l_{titulo}", height=100)
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
@@ -66,46 +71,38 @@ def renderizar_bloco(titulo):
         if "prob" in st.session_state.db[titulo]:
             p = st.session_state.db[titulo]["prob"]
             st.markdown("---")
-            st.write("📊 **Probabilidades:**")
-            
-            cols_g = st.columns(2)
-            cols_g[0].write(f"Over 1.5: {min(p+5, 100):.0f}%")
-            cols_g[0].progress(min((p+5)/100, 1.0))
-            cols_g[1].write(f"Over 2.5: {min(p, 100):.0f}%")
-            cols_g[1].progress(min(p/100, 1.0))
-            
-            prob_val = st.text_input("Ajustar Probabilidade (%)", value=str(round(p, 1)), key=f"inp_prob_{titulo}")
-            tipo = "Over 1.5 FT" if p >= 70 else "LTD"
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
-            
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n📈 *Probabilidade:* {round(p,1)}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
                 payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
                 r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
                 if r.get("ok"): 
-                    st.session_state.db[titulo].update({"id": r["result"]["message_id"], "msg": msg})
+                    # Salvando ID e Mensagem com força
+                    st.session_state.db[titulo]["id"] = r["result"]["message_id"]
+                    st.session_state.db[titulo]["msg"] = msg
                     salvar_db(st.session_state.db)
                     st.rerun()
 
+        # Botões de controle
         if "id" in st.session_state.db[titulo]:
             st.markdown("---")
-            col_b1, col_b2, col_b3 = st.columns(3)
+            st.write(f"✅ Mensagem enviada (ID: {st.session_state.db[titulo]['id']})")
+            b1, b2, b3 = st.columns(3)
             
             def editar_telegram(status, status_visual):
-                msg_id = st.session_state.db[titulo]["id"]
-                original_msg = st.session_state.db[titulo]["msg"]
-                new_msg = f"{original_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
-                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                              data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
-                st.success(f"Status atualizado!")
+                mid = st.session_state.db[titulo]["id"]
+                orig = st.session_state.db[titulo]["msg"]
+                new_msg = f"{orig}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
+                res = requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                              data={"chat_id": chat_id, "message_id": mid, "text": new_msg, "parse_mode": "Markdown"}).json()
+                if res.get("ok"): st.success("Status atualizado no Telegram!")
+                else: st.error("Erro ao editar no Telegram!")
 
-            if col_b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
-            if col_b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
-            if col_b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
+            if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
+            if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
+            if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
 
-# Layout principal
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
