@@ -26,7 +26,7 @@ def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
         
-        # Organização em colunas para os inputs
+        # Inputs
         c1, c2 = st.columns(2)
         camp = c1.text_input(f"Campeonato", key=f"c_{titulo}")
         hora = c2.text_input(f"Horário", key=f"h_{titulo}")
@@ -47,7 +47,6 @@ def renderizar_bloco(titulo):
             st.markdown("---")
             st.write("📊 **Probabilidades:**")
             
-            # Gráficos coloridos
             cols_g = st.columns(2)
             cols_g[0].write(f"Over 1.5: {min(p+5, 100):.0f}%"); cols_g[0].progress(min((p+5)/100, 1.0))
             cols_g[1].write(f"Over 2.5: {min(p, 100):.0f}%"); cols_g[1].progress(min(p/100, 1.0))
@@ -68,19 +67,23 @@ def renderizar_bloco(titulo):
                     st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
                     st.rerun()
 
-        # Botões de controle em destaque
+        # Botões de controle com formatação especial
         if f"id_{titulo}" in st.session_state:
             st.markdown("---")
             col_b1, col_b2, col_b3 = st.columns(3)
-            def editar_telegram(status):
-                new_msg = st.session_state[f"msg_{titulo}"] + f"\n⚽ *Placar Final:* {placar}\n\n🔄 *Status:* {status}"
+            
+            def editar_telegram(status, status_visual):
+                new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
                 requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
                               data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
                 st.success(f"Status atualizado!")
 
-            if col_b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("✅ GREEN!!")
-            if col_b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("❌ RED!")
-            if col_b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("🔄 DEVOLVIDA")
+            if col_b1.button("✅ GREEN", key=f"g_{titulo}"): 
+                editar_telegram("GREEN", "🎉💰 ✅ **GREEN MINEIRO!!** 💰🎉")
+            if col_b2.button("❌ RED", key=f"r_{titulo}"): 
+                editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
+            if col_b3.button("🔄 DEV", key=f"d_{titulo}"): 
+                editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
 
 # Layout principal
 col1, col2 = st.columns(2)
