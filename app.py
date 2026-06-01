@@ -5,7 +5,6 @@ import re
 st.set_page_config(layout="wide")
 st.title("🤖 Painel Brazukas - Gestão com Gráficos")
 
-# Sidebar
 token = st.sidebar.text_input("Token Telegram", type="password")
 chat_id = st.sidebar.text_input("ID Canal", type="password")
 
@@ -28,31 +27,25 @@ def renderizar_bloco(titulo):
         p = calcular_probabilidade(lista)
         st.session_state[f"prob_{titulo}"] = p
         
-        # Gráficos com números
         st.write("📊 **Acompanhamento Visual:**")
+        st.write(f"Over 1.5 FT ({min(p+5, 100)}%)"); st.progress(min((p+5)/100, 1.0))
+        st.write(f"Over 2.5 FT ({min(p, 100)}%)"); st.progress(min(p/100, 1.0))
+        st.write(f"Ambas Marcam ({max(0, p-10)}%)"); st.progress(max(0, p-10)/100)
+        st.write(f"LTD ({max(0, p-15)}%)"); st.progress(max(0, p-15)/100)
         
-        val_o15 = min((p+5), 100)
-        st.write(f"Over 1.5 FT ({val_o15}%)")
-        st.progress(val_o15/100)
+        # Seleção de Mercado (Automático ou Manual)
+        opcao = st.selectbox(f"Escolha o Mercado ({titulo})", 
+                            ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
+                            key=f"sel_{titulo}")
         
-        val_o25 = min(p, 100)
-        st.write(f"Over 2.5 FT ({val_o25}%)")
-        st.progress(val_o25/100)
-        
-        val_btts = min((p-10), 100)
-        st.write(f"Ambas Marcam ({max(0, val_btts)}%)")
-        st.progress(max(0, val_btts)/100)
-        
-        val_ltd = min((p-15), 100)
-        st.write(f"LTD ({max(0, val_ltd)}%)")
-        st.progress(max(0, val_ltd)/100)
-        
-        # Lógica de seleção (mantendo a mensagem original)
-        tipo = "LTD" if p >= 51 else None
-        if p >= 55: tipo = "BTTS"
-        if p >= 70: tipo = "Over 1.5 FT"
-        if p >= 65: tipo = "Over 2.5 FT"
-        
+        if opcao == "Automático":
+            tipo = "LTD" if p >= 51 else None
+            if p >= 55: tipo = "Ambas Marcam (BTTS)"
+            if p >= 65: tipo = "Over 2.5 FT"
+            if p >= 70: tipo = "Over 1.5 FT"
+        else:
+            tipo = opcao
+            
         if tipo:
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
