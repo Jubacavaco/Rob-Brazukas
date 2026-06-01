@@ -4,20 +4,17 @@ import re
 
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
-# CSS para um visual ultra-moderno e limpo
+# CSS para um visual moderno
 st.markdown("""
     <style>
     .stApp { background-color: #f8f9fa; }
-    div[data-testid="stVerticalBlock"] { gap: 1rem; }
-    .stButton>button { border-radius: 12px; font-weight: bold; width: 100%; transition: 0.3s; }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .stButton>button { border-radius: 12px; font-weight: bold; width: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align: center; color: #1e3d59;'>🤖 Sistema Brazukas Top Tips</h1>", unsafe_allow_html=True)
 st.write("---")
 
-# Configurações no Sidebar
 with st.sidebar:
     st.header("⚙️ Configurações")
     token = st.text_input("Token Telegram", type="password")
@@ -47,14 +44,15 @@ def renderizar_bloco(titulo):
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}", height=100)
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-            p = calcular_probabilidade(lista)
-            st.session_state[f"p_{titulo}"] = p
+            st.session_state[f"p_{titulo}"] = calcular_probabilidade(lista)
+            st.rerun()
             
+        # O erro estava aqui: só tenta acessar se existir
         if f"p_{titulo}" in st.session_state:
             p = st.session_state[f"p_{titulo}"]
             st.markdown("---")
+            st.write("📊 **Análise de Mercados:**")
             
-            # Gráficos com números
             v15 = min(p + 5, 100)
             v25 = min(p, 100)
             vBTTS = min(p + 2, 100)
@@ -66,7 +64,6 @@ def renderizar_bloco(titulo):
             cols[2].write(f"BTTS: **{vBTTS:.0f}%**"); cols[2].progress(vBTTS/100)
             cols[3].write(f"LTD: **{vLTD:.0f}%**"); cols[3].progress(vLTD/100)
             
-            # Escolha de mercado
             mercado_escolhido = st.selectbox("Mercado de Envio", 
                                             ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
                                             key=f"sel_{titulo}")
@@ -89,7 +86,6 @@ def renderizar_bloco(titulo):
                               data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
                 st.success("Enviado com sucesso!")
 
-# Layout
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO_A")
 with col_b: renderizar_bloco("JOGO_B")
