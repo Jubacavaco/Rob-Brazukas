@@ -29,7 +29,6 @@ def renderizar_bloco(titulo):
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
-        placar = st.text_input("Placar Final", key=f"p_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
@@ -38,50 +37,43 @@ def renderizar_bloco(titulo):
         
         if f"prob_{titulo}" in st.session_state:
             p = st.session_state[f"prob_{titulo}"]
+            prob_valor = st.number_input("Probabilidade (%)", value=float(p), key=f"p_val_{titulo}")
+            placar = st.text_input("Placar Final", key=f"p_{titulo}")
             
-            # Gráficos
-            st.write("📊 **Probabilidades:**")
-            g1, g2 = st.columns(2)
-            g1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); g1.progress(min((p+5)/100, 1.0))
-            g2.write(f"O 2.5 ({min(p, 100):.0f}%)"); g2.progress(min(p/100, 1.0))
-            g3, g4 = st.columns(2)
-            g3.write(f"BTTS ({min(p-10, 100):.0f}%)"); g3.progress(max(min((p-10)/100, 1.0), 0.0))
-            g4.write(f"LTD ({min(100-p, 100):.0f}%)"); g4.progress(min((100-p)/100, 1.0))
+            # Hierarquia de Prioridade
+            if prob_valor >= 65: sugestao = "Over 2.5 FT"
+            elif prob_valor >= 75: sugestao = "Over 1.5 FT"
+            elif prob_valor >= 51: sugestao = "Ambas Marcam (BTTS)"
+            else: sugestao = "LTD"
 
-            # Sugestão Automática
-            sugestao = "Over 1.5 FT" if p >= 70 else "LTD"
-            st.success(f"💡 **Aposta Recomendada pelo Sistema:** {sugestao}")
+            st.success(f"💡 Sugestão: {sugestao}")
+            opcoes = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"]
+            tipo = st.selectbox(f"Selecione o Mercado ({titulo}):", opcoes, index=opcoes.index(sugestao), key=f"sel_{titulo}")
             
-            # Tua escolha manual
-            tipo = st.selectbox(f"Selecione o Mercado para Enviar ({titulo}):", 
-                                ["Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
-                                key=f"sel_{titulo}")
-            
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {p:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
-            st.info(f"Prévia da mensagem:\n\n{msg}")
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_valor:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
+            st.info(f"Prévia:\n{msg}")
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
                 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-                res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
+                params = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
+                res = requests.post(url, data=params).json()
+                
                 if res.get("ok"):
                     st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                     st.session_state[f"msg_{titulo}"] = msg
+                    st.success("Enviado com sucesso!")
                     st.rerun()
+                else:
+                    st.error(f"Erro no Telegram: {res.get('description')} (Código: {res.get('error_code')})")
 
-        # Edição de Status
+        # Edição
         if f"id_{titulo}" in st.session_state:
             st.write("---")
-            c1, c2, c3 = st.columns(3)
-            def registrar(status):
-                msg_id = st.session_state.get(f"id_{titulo}")
-                url_edit = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-                novo_texto = st.session_state.get(f"msg_{titulo}") + f"\n\n⚽ *Placar:* {placar}\n🔄 *Status:* {status}"
-                requests.post(url_edit, data={"chat_id": CHAT_ID, "message_id": msg_id, "text": novo_texto, "parse_mode": "Markdown"})
-                st.success("Atualizado!")
-
-            if c1.button("✅ GREEN", key=f"g_{titulo}"): registrar("✅ GREEN!!")
-            if c2.button("❌ RED", key=f"r_{titulo}"): registrar("❌ RED!")
-            if c3.button("🔄 DEV", key=f"d_{titulo}"): registrar("🔄 DEVOLVIDA")
+            if st.button("✅ GREEN", key=f"g_{titulo}"):
+                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
+                              data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], 
+                                    "text": st.session_state[f"msg_{titulo}"] + "\n\n✅ GREEN!!", "parse_mode": "Markdown"})
+                st.success("Green enviado!")
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
