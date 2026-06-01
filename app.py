@@ -19,26 +19,37 @@ def calcular_probabilidade(texto):
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     
-    # Todos os campos aparecem sempre
+    # CAMPOS SEMPRE VISÍVEIS
     camp = st.text_input(f"Campeonato ({titulo})", key=f"c_{titulo}")
     casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
     vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
-    # Botão de Análise
+    # ANÁLISE
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
     
-    # Exibe os resultados e controles sempre que houver probabilidade calculada
+    # SE JÁ HOUVE ANÁLISE, MOSTRA MERCADO E ENVIO
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
-        st.write(f"📈 Probabilidade: {p:.1f}%")
-        st.progress(min(p/100, 1.0))
+        st.write(f"📈 Probabilidade Calculada: **{p:.1f}%**")
         
-        mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
+        # ESCOLHA DO MERCADO (Sempre visível após analisar)
+        mercado = st.selectbox(f"Definir Mercado ({titulo})", 
+                               ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
+                               key=f"sel_{titulo}")
         
-        tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
+        # Lógica
+        if mercado == "Automático":
+            if p >= 70: tipo = "Over 1.5 FT"
+            elif p >= 65: tipo = "Over 2.5 FT"
+            elif p >= 55: tipo = "Ambas Marcam (BTTS)"
+            else: tipo = "LTD"
+        else:
+            tipo = mercado
+        
+        st.write(f"🎯 Mercado selecionado: **{tipo}**")
         
         msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         st.info(msg)
@@ -49,24 +60,22 @@ def renderizar_bloco(titulo):
             r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
             if r.get("ok"): 
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
-                st.success("Enviado ao Telegram!")
+                st.success("Enviado com sucesso!")
 
-    # Botões de controle sempre presentes se a mensagem foi enviada
+    # BOTÕES DE CONTROLE (Só aparecem após envio)
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         c1, c2, c3 = st.columns(3)
-        
         def editar_telegram(status):
             new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-            payload = {"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"}
-            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", data=payload)
+            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                          data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
             st.success(f"Registrado: {status}")
 
         if c1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("✅ GREEN!!")
         if c2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("❌ RED!")
         if c3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("🔄 DEVOLVIDA")
 
-# Layout das duas colunas
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
