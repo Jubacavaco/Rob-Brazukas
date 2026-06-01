@@ -4,7 +4,6 @@ import re
 import json
 import os
 
-# Configuração da página
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
 # CSS para um visual moderno
@@ -19,8 +18,7 @@ DB_FILE = "dados_brazukas.json"
 
 def carregar_db():
     if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f: return json.load(f)
+        try: with open(DB_FILE, "r") as f: return json.load(f)
         except: return {}
     return {}
 
@@ -32,7 +30,6 @@ if "db" not in st.session_state: st.session_state.db = carregar_db()
 st.markdown("<h1 style='text-align: center;'>🤖 Sistema Brazukas Top Tips</h1>", unsafe_allow_html=True)
 st.write("---")
 
-# Sidebar
 with st.sidebar:
     st.header("⚙️ Configurações")
     token = st.text_input("Token Telegram", type="password")
@@ -53,9 +50,9 @@ def renderizar_bloco(titulo):
         if titulo not in st.session_state.db: st.session_state.db[titulo] = {}
         d = st.session_state.db[titulo]
         
-        col1, col2 = st.columns(2)
-        camp = col1.text_input("Campeonato", value=d.get("camp", ""), key=f"c_{titulo}")
-        hora = col2.text_input("Horário", value=d.get("hora", ""), key=f"h_{titulo}")
+        c1, c2 = st.columns(2)
+        camp = c1.text_input("Campeonato", value=d.get("camp", ""), key=f"c_{titulo}")
+        hora = c2.text_input("Horário", value=d.get("hora", ""), key=f"h_{titulo}")
         
         col_c, col_v, col_p = st.columns(3)
         casa = col_c.text_input("Casa", value=d.get("casa", ""), key=f"ca_{titulo}")
@@ -66,20 +63,23 @@ def renderizar_bloco(titulo):
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
             p = calcular_probabilidade(lista)
-            st.session_state.db[titulo].update({"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p})
+            # Regra de Mercado
+            mercado = "Over 1.5 FT" if p >= 70 else ("Ambas Marcam (BTTS)" if p >= 50 else "LTD")
+            st.session_state.db[titulo].update({"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p, "mercado": mercado})
             salvar_db(st.session_state.db)
             st.rerun()
         
         if "prob" in st.session_state.db[titulo]:
             p = st.session_state.db[titulo]["prob"]
+            mercado = st.session_state.db[titulo].get("mercado", "LTD")
+            
             st.markdown("---")
-            c_g1, c_g2 = st.columns(2)
-            c_g1.metric("Over 1.5", f"{min(p+5, 100):.0f}%")
-            c_g2.metric("Over 2.5", f"{min(p, 100):.0f}%")
+            st.metric("Probabilidade Calculada", f"{p:.1f}%")
+            st.write(f"🎯 **Mercado Sugerido:** {mercado}")
             
             prob_val = st.text_input("Ajustar Prob (%)", value=str(round(p, 1)), key=f"inp_{titulo}")
             
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
             
             st.info(msg)
             
@@ -100,13 +100,12 @@ def renderizar_bloco(titulo):
                 new_msg = f"{original_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
                 requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
                               data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
-                st.success("Atualizado!")
+                st.success("Status atualizado!")
             
             if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
             if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
             if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
 
-# Layout principal
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO_A")
 with col_b: renderizar_bloco("JOGO_B")
