@@ -1,17 +1,10 @@
 import streamlit as st
-import requests
 
-st.set_page_config(layout="wide", page_title="Painel Brazukas")
-st.title("🤖 Painel Brazukas")
+st.title("Painel Brazukas")
 
-# Aqui ele vai buscar ao cofre sem te pedir nada
+# Teste simples para ver se ele lê o ficheiro
 try:
-    TOKEN = st.secrets["token"]
-    CHAT_ID = st.secrets["chat_id"]
+    token = st.secrets["token"]
+    st.write("✅ Consegui ler o Token!")
 except:
-    st.error("Configuração não encontrada. Vai a 'Manage App' > 'Settings' > 'Secrets' no Streamlit.")
-    st.stop()
-
-# Aqui começa o teu painel normal
-st.write("Configurações carregadas com sucesso!")
-# ... (o resto do teu código dos jogos aqui)
+    st.write("❌ Não encontrei o token. O ficheiro .streamlit/secrets.toml está lá?")
