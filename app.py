@@ -20,17 +20,11 @@ def calcular_probabilidade(texto):
     return float(p_casa), float(p_vis), float(p_emp), float(p_gols)
 
 def obter_sugestao(p):
-    # Regras de prioridade solicitadas:
-    if p >= 65: 
-        return "Over 2.5 FT"
-    elif p >= 75: 
-        return "Over 1.5 FT"
-    elif p >= 51: 
-        # Se bater 51%, verifica prioridade de gols
-        if p >= 65: return "Over 2.5 FT"
-        return "Ambas Marcam (BTTS)"
-    else: 
-        return "LTD"
+    # Regra estrita de prioridade
+    if p >= 65: return "Over 2.5 FT"
+    elif p >= 75: return "Over 1.5 FT"
+    elif p >= 51: return "Ambas Marcam (BTTS)"
+    else: return "LTD"
 
 def renderizar_bloco(titulo):
     with st.container(border=True):
@@ -48,31 +42,35 @@ def renderizar_bloco(titulo):
         
         if f"probs_{titulo}" in st.session_state:
             pc, pv, pe, pg = st.session_state[f"probs_{titulo}"]
-            sugestao_auto = obter_sugestao(pg)
+            sugestao = obter_sugestao(pg)
             
-            # Gráficos de Gols
-            st.write("📊 **Análise de Gols:**")
-            st.progress(min(max((pg+5)/100, 0.0), 1.0), text=f"O 1.5: {min(pg+5, 100):.0f}%")
-            st.progress(min(max(pg/100, 0.0), 1.0), text=f"O 2.5: {pg:.0f}%")
-            st.progress(min(max((pg-10)/100, 0.0), 1.0), text=f"BTTS: {max(pg-10, 0):.0f}%")
-            st.progress(min(max((100-pg)/100, 0.0), 1.0), text=f"LTD: {max(100-pg, 0):.0f}%")
-
-            # Gráficos Match Odds
-            st.write("🏆 **Match Odds:**")
-            st.progress(min(max(pc/100, 0.0), 1.0), text=f"Vitória {casa}: {pc:.1f}%")
-            st.progress(min(max(pv/100, 0.0), 1.0), text=f"Vitória {vis}: {pv:.1f}%")
-            st.progress(min(max(pe/100, 0.0), 1.0), text=f"Empate: {pe:.1f}%")
+            # Visualização da Aposta Recomendada em destaque
+            st.warning(f"🎯 **APOSTA RECOMENDADA: {sugestao}** (Prob: {pg:.1f}%)")
+            
+            # Gráficos
+            st.write("📊 **Análise Geral:**")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.progress(pg/100, text=f"Over 2.5: {pg:.0f}%")
+                st.progress((pg+5)/100, text=f"Over 1.5: {min(pg+5, 100):.0f}%")
+                st.progress((pg-10)/100, text=f"BTTS: {max(pg-10, 0):.0f}%")
+            with col_b:
+                st.progress((100-pg)/100, text=f"LTD: {max(100-pg, 0):.0f}%")
+                st.progress(pc/100, text=f"Vitória {casa}: {pc:.1f}%")
+                st.progress(pv/100, text=f"Vitória {vis}: {pv:.1f}%")
             
             placar = st.text_input("Placar Final", key=f"p_{titulo}")
-            mercados = [sugestao_auto, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
+            mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
             tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
             
+            # Formatação da mensagem incluindo todas as probabilidades relevantes
             display = tipo
             if "Casa Vence" in tipo: display = f"Match Odd's: {casa}"
             elif "Visitante Vence" in tipo: display = f"Match Odd's: {vis}"
             
-            msg = f"🚨 *Alerta* 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {display}\n📈 {pg:.1f}%\n⏰ {hora}"
-            st.info(f"**Prévia da Mensagem:**\n{msg}")
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {display}\n📈 Probabilidade: {pg:.1f}%\n⏰ {hora}"
+            
+            st.info(f"**Prévia da mensagem que será enviada:**\n\n{msg}")
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
                 url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -82,18 +80,17 @@ def renderizar_bloco(titulo):
                     st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                     st.rerun()
 
-        # Botões de Status
         if f"msg_enviada_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
-            def editar_status(status):
+            def editar(status):
                 msg_id = st.session_state[f"id_{titulo}"]
-                texto = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
-                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": msg_id, "text": texto, "parse_mode": "Markdown"})
+                txt = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
+                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
                 st.success("Atualizado!")
-            if c1.button("✅ GREEN", key=f"g_{titulo}"): editar_status("GREEN ✅")
-            if c2.button("❌ RED", key=f"r_{titulo}"): editar_status("RED ❌")
-            if c3.button("🔄 DEV", key=f"d_{titulo}"): editar_status("DEVOLVIDA 🔄")
+            if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("GREEN ✅")
+            if c2.button("❌ RED", key=f"r_{titulo}"): editar("RED ❌")
+            if c3.button("🔄 DEV", key=f"d_{titulo}"): editar("DEVOLVIDA 🔄")
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
