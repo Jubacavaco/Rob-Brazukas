@@ -3,14 +3,12 @@ import requests
 import re
 
 st.set_page_config(page_title="Robô Brazukas Dual", layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Dual Completa")
+st.title("🤖 Painel Brazukas - Gestão Completa")
 
-# --- CONFIGURAÇÕES ---
-st.sidebar.header("⚙️ Configurações Telegram")
-token = st.sidebar.text_input("🔑 Token Telegram", type="password")
-chat_id = st.sidebar.text_input("📢 ID do Canal", type="password")
+# Sidebar
+token = st.sidebar.text_input("Token Telegram", type="password")
+chat_id = st.sidebar.text_input("ID Canal", type="password")
 
-# --- FUNÇÕES ---
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\d+', texto)
     gols = [int(n) for n in numeros if int(n) <= 10]
@@ -19,60 +17,14 @@ def calcular_probabilidade(texto):
     return min(media * 35, 100)
 
 def gerar_mensagem(tipo, camp, casa, vis, hora):
-    return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Camp:* {camp}\n🆚 {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+    return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
 
-# --- BLOCO DE JOGO ---
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
-    camp = st.text_input(f"Campeonato ({titulo})", key=f"camp_{titulo}")
-    casa = st.text_input(f"Casa ({titulo})", key=f"casa_{titulo}")
-    vis = st.text_input(f"Visitante ({titulo})", key=f"vis_{titulo}")
-    hora = st.text_input(f"Horário ({titulo})", key=f"hora_{titulo}")
-    lista = st.text_area(f"Lista de Jogos ({titulo})", key=f"lista_{titulo}")
+    camp = st.text_input(f"Campeonato ({titulo})", key=f"c_{titulo}")
+    casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
+    vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
+    hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
+    lista = st.text_area(f"Lista de Jogos ({titulo})", key=f"l_{titulo}")
     
-    if st.button(f"Analisar e Enviar {titulo}", key=f"btn_{titulo}"):
-        prob = calcular_probabilidade(lista)
-        st.write(f"📈 **Probabilidade:** {prob:.1f}%")
-        
-        tipo = None
-        if prob >= 65: tipo = "Over 2.5 FT"
-        elif prob >= 70: tipo = "Over 1.5 FT"
-        elif prob >= 55: tipo = "BTTS"
-        elif prob >= 51: tipo = "LTD"
-        
-        if tipo:
-            msg = gerar_mensagem(tipo, camp, casa, vis, hora)
-            if token and chat_id:
-                resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
-                                   data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}).json()
-                if resp.get("ok"):
-                    st.session_state[f"id_{titulo}"] = resp["result"]["message_id"]
-                    st.session_state[f"msg_{titulo}"] = msg
-                    st.success("Sinal enviado com sucesso!")
-                else:
-                    st.error("Erro ao enviar ao Telegram.")
-            else:
-                st.warning("Configure o Token e ID na barra lateral.")
-        else:
-            st.warning("Probabilidade muito baixa para entrada.")
-
-    # --- CONTROLES DE RESULTADO ---
-    if f"id_{titulo}" in st.session_state:
-        st.write("---")
-        c1, c2, c3 = st.columns(3)
-        
-        def registrar(status):
-            msg_id = st.session_state[f"id_{titulo}"]
-            msg_final = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                          data={"chat_id": chat_id, "message_id": msg_id, "text": msg_final, "parse_mode": "Markdown"})
-            st.success(f"Status atualizado para: {status}")
-
-        if c1.button("✅ GREEN", key=f"green_{titulo}"): registrar("✅ GREEN!!")
-        if c2.button("❌ RED", key=f"red_{titulo}"): registrar("❌ RED!")
-        if c3.button("🔄 DEV", key=f"dev_{titulo}"): registrar("🔄 DEVOLVIDA")
-
-# --- LAYOUT ---
-col1, col2 = st.columns(2)
-with col1: renderizar_bloco("JOGO_1")
-with col2: renderizar_bloco("JOGO_2")
+    if st.button(f"📊 Analisar {titulo}", key=f"btn_
