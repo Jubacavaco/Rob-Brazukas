@@ -90,7 +90,7 @@ def renderizar_bloco(titulo):
             elif modo == "HT":
                 txt_placar = f"\n⚽ HT: {pht}"
             elif modo == "HT2":
-                txt_placar = f"\n⚽ HT: {pht} (Em análise)"
+                txt_placar = f"\n⚽ HT: {pht}"
             elif modo == "FINAL":
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
             elif modo == "RED":
