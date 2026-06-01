@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips - 4 Jogos")
-st.title("🤖 Sistema Brazukas Top Tips (4 Jogos)")
+st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
@@ -33,6 +33,7 @@ def renderizar_bloco(titulo):
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
+        # CAMPO DE PORCENTAGEM MANUAL DEVOLVIDO
         prob_manual = st.text_input("Porcentagem (%)", key=f"pr_{titulo}")
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         
@@ -48,23 +49,27 @@ def renderizar_bloco(titulo):
                 sugestao = obter_sugestao(p15, p25, pbtts, pltd)
                 
                 if sugestao != "Nenhuma":
-                    st.warning(f"🎯 **SUGESTÃO: {sugestao}**")
+                    st.warning(f"🎯 **APOSTA RECOMENDADA: {sugestao}**")
                 else:
-                    st.error("⚠️ Sem meta mínima.")
+                    st.error("⚠️ Nenhum mercado atingiu a meta mínima.")
                 
-                # Gráficos em miniatura para caberem 4 jogos
-                st.write("📊 **Gols:**")
-                st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
-                st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
-                
+                # Gráficos de análise...
                 placar = st.text_input("Placar Final", key=f"p_{titulo}")
                 mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
                 tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
                 
-                val_prob = prob_manual if prob_manual else f"{p25:.1f}"
+                # Usa o valor manual se preenchido, senão usa o calculado
+                valor_prob = prob_manual if prob_manual else f"{p25:.1f}"
                 
-                msg = (f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 Probabilidade: {val_prob}%\n⏰ {hora}\n\n"
+                msg = (f"🚨 *Alerta de Entrada* 🚨\n\n"
+                       f"🏆 Campeonato: {camp}\n"
+                       f"🆚 Jogo: {casa} x {vis}\n"
+                       f"🎯 Mercado: {tipo}\n"
+                       f"📈 Probabilidade: {valor_prob}%\n"
+                       f"⏰ Horário: {hora}\n\n"
                        f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
+                
+                st.info(f"**Prévia da mensagem:**\n{msg}")
                 
                 if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
                     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -74,9 +79,19 @@ def renderizar_bloco(titulo):
                         st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                         st.rerun()
 
+        # Botões de Status...
         if f"msg_enviada_{titulo}" in st.session_state:
             st.write("---")
             c1, c2, c3 = st.columns(3)
             def editar(status):
                 msg_id = st.session_state[f"id_{titulo}"]
-                txt = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
+                txt = st.session_state[f"msg_enviada_{titulo}"] + f"\n\n⚽ Placar Final: {st.session_state.get(f'p_{titulo}', 'N/A')}\n🔄 Status: {status}"
+                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
+                st.success("Atualizado!")
+            if c1.button("✅ GREEN", key=f"g_{titulo}"): editar("GREEN ✅")
+            if c2.button("❌ RED", key=f"r_{titulo}"): editar("RED ❌")
+            if c3.button("🔄 DEV", key=f"d_{titulo}"): editar("DEVOLVIDA 🔄")
+
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
