@@ -31,7 +31,7 @@ def renderizar_bloco(titulo):
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         p = calcular_probabilidade(lista)
         st.session_state[f"prob_{titulo}"] = p
-        st.session_state[f"conf_{titulo}"] = round(p, 1)
+        st.session_state[f"val_prob_{titulo}"] = round(p, 1)
         st.rerun()
     
     # RESULTADOS
@@ -44,16 +44,16 @@ def renderizar_bloco(titulo):
         st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)"); st.progress(max(0, p-10)/100)
         st.write(f"LTD ({max(0, 100-p):.1f}%)"); st.progress(max(0, 100-p)/100)
         
-        # CAMPO DE CONFIANÇA
-        conf = st.text_input("Confiança (%)", value=str(st.session_state.get(f"conf_{titulo}", "")), key=f"inp_conf_{titulo}")
+        # CAMPO DE PROBABILIDADE
+        prob_val = st.text_input("Probabilidade (%)", value=str(st.session_state.get(f"val_prob_{titulo}", "")), key=f"inp_prob_{titulo}")
         
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
         
-        st.write(f"🎯 Mercado: **{tipo}** | Confiança: **{conf}%**")
+        st.write(f"🎯 Mercado: **{tipo}** | Probabilidade: **{prob_val}%**")
         
         # MENSAGEM FINAL
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Confiança:* {conf}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
