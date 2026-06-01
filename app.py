@@ -25,6 +25,7 @@ def renderizar_bloco(titulo):
     casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
     vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
+    placar = st.text_input(f"Placar Final ({titulo})", key=f"p_{titulo}") # A caixinha está aqui
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
     # ANÁLISE
@@ -53,7 +54,7 @@ def renderizar_bloco(titulo):
         st.write(f"🎯 Mercado: **{tipo}** | Probabilidade: **{prob_val}%**")
         
         # MENSAGEM FINAL
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n⚽ *Placar Final:* {placar}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
