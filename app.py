@@ -40,7 +40,6 @@ def renderizar_bloco(titulo):
             st.session_state[f"probs_{titulo}"] = res
             st.rerun()
         
-        # Proteção na leitura do session_state
         if f"probs_{titulo}" in st.session_state:
             dados = st.session_state[f"probs_{titulo}"]
             if isinstance(dados, (tuple, list)) and len(dados) == 7:
@@ -52,11 +51,16 @@ def renderizar_bloco(titulo):
                 else:
                     st.error("⚠️ Nenhum mercado atingiu a meta mínima.")
                 
-                st.write("📊 **Probabilidades:**")
+                st.write("📊 **Análise de Gols:**")
                 st.progress(min(max(p15/100, 0), 1), text=f"Over 1.5: {p15:.0f}%")
                 st.progress(min(max(p25/100, 0), 1), text=f"Over 2.5: {p25:.0f}%")
                 st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
                 st.progress(min(max(pltd/100, 0), 1), text=f"LTD: {pltd:.0f}%")
+
+                st.write("🏆 **Match Odds:**")
+                st.progress(min(max(pc/100, 0), 1), text=f"Vitória {casa}: {pc:.1f}%")
+                st.progress(min(max(pv/100, 0), 1), text=f"Vitória {vis}: {pv:.1f}%")
+                st.progress(min(max(pe/100, 0), 1), text=f"Empate: {pe:.1f}%")
 
                 placar = st.text_input("Placar Final", key=f"p_{titulo}")
                 mercados = [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", f"Casa Vence ({casa})", f"Visitante Vence ({vis})", "Empate"]
