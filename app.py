@@ -47,18 +47,17 @@ def renderizar_bloco(titulo):
             st.session_state[f"p_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
             
-        # Tratamento de erro: se p não existir, usa 0
-        p = st.session_state.get(f"p_{titulo}", 0)
-        
+        # APENAS desenha o gráfico e envia se a probabilidade já tiver sido calculada
         if f"p_{titulo}" in st.session_state:
+            p = st.session_state[f"p_{titulo}"]
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            # Garantindo que p seja tratado como número para os cálculos
-            v15 = min((p or 0) + 5, 100)
-            v25 = min((p or 0), 100)
-            vBTTS = min((p or 0) + 2, 100)
-            vLTD = min(100 - (p or 0), 100)
+            # Cálculos protegidos
+            v15 = min(p + 5, 100)
+            v25 = min(p, 100)
+            vBTTS = min(p + 2, 100)
+            vLTD = min(100 - p, 100)
             
             cols = st.columns(4)
             cols[0].write(f"O 1.5: **{v15:.0f}%**"); cols[0].progress(v15/100)
@@ -84,9 +83,12 @@ def renderizar_bloco(titulo):
             st.info(msg)
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
-                requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
-                              data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
-                st.success("Enviado com sucesso!")
+                if token and chat_id:
+                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
+                                  data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
+                    st.success("Enviado com sucesso!")
+                else:
+                    st.error("Configure o Token e ID no menu lateral!")
 
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO_A")
