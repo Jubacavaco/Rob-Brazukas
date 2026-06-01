@@ -47,16 +47,18 @@ def renderizar_bloco(titulo):
             st.session_state[f"p_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
             
-        # O erro estava aqui: só tenta acessar se existir
+        # Tratamento de erro: se p não existir, usa 0
+        p = st.session_state.get(f"p_{titulo}", 0)
+        
         if f"p_{titulo}" in st.session_state:
-            p = st.session_state[f"p_{titulo}"]
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            v15 = min(p + 5, 100)
-            v25 = min(p, 100)
-            vBTTS = min(p + 2, 100)
-            vLTD = min(100 - p, 100)
+            # Garantindo que p seja tratado como número para os cálculos
+            v15 = min((p or 0) + 5, 100)
+            v25 = min((p or 0), 100)
+            vBTTS = min((p or 0) + 2, 100)
+            vLTD = min(100 - (p or 0), 100)
             
             cols = st.columns(4)
             cols[0].write(f"O 1.5: **{v15:.0f}%**"); cols[0].progress(v15/100)
