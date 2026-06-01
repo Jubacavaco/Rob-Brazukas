@@ -26,16 +26,15 @@ def renderizar_bloco(titulo):
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
     lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
     
-    # ANÁLISE
+    # ANÁLISE (Executa o cálculo mas não exibe o texto da %)
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
     
     # SE JÁ HOUVE ANÁLISE, MOSTRA MERCADO E ENVIO
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
-        st.write(f"📈 Probabilidade Calculada: **{p:.1f}%**")
         
-        # ESCOLHA DO MERCADO (Sempre visível após analisar)
+        # ESCOLHA DO MERCADO
         mercado = st.selectbox(f"Definir Mercado ({titulo})", 
                                ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
                                key=f"sel_{titulo}")
@@ -62,7 +61,7 @@ def renderizar_bloco(titulo):
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
                 st.success("Enviado com sucesso!")
 
-    # BOTÕES DE CONTROLE (Só aparecem após envio)
+    # BOTÕES DE CONTROLE
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         c1, c2, c3 = st.columns(3)
