@@ -4,7 +4,6 @@ import re
 
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
-# CSS para um visual moderno
 st.markdown("""
     <style>
     .stApp { background-color: #f8f9fa; }
@@ -32,29 +31,30 @@ def renderizar_bloco(titulo):
     with st.container():
         st.subheader(f"🏟️ {titulo}")
         
-        col1, col2 = st.columns(2)
-        camp = col1.text_input("Campeonato", key=f"c_{titulo}")
-        hora = col2.text_input("Horário", key=f"h_{titulo}")
+        # Criação de chaves únicas para os inputs
+        c1, c2 = st.columns(2)
+        camp = c1.text_input("Campeonato", key=f"c_in_{titulo}")
+        hora = c2.text_input("Horário", key=f"h_in_{titulo}")
         
         c3, c4, c5 = st.columns(3)
-        casa = c3.text_input("Casa", key=f"ca_{titulo}")
-        vis = c4.text_input("Visitante", key=f"v_{titulo}")
-        placar = c5.text_input("Placar", key=f"p_{titulo}")
+        casa = c3.text_input("Casa", key=f"ca_in_{titulo}")
+        vis = c4.text_input("Visitante", key=f"v_in_{titulo}")
+        placar = c5.text_input("Placar", key=f"p_in_{titulo}")
         
-        lista = st.text_area("Lista de jogos", key=f"l_{titulo}", height=100)
+        lista = st.text_area("Lista de jogos", key=f"l_in_{titulo}", height=100)
         
-        # Botão Analisar
-        if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-            st.session_state[f"p_{titulo}"] = calcular_probabilidade(lista)
-            st.rerun()
+        # Botão de análise
+        if st.button(f"Analisar {titulo}", key=f"btn_{titulo}"):
+            # Calculamos o valor e guardamos numa chave específica
+            st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
+            st.rerun() # Recarrega para exibir os resultados
             
-        # Verifica se já existe probabilidade calculada
-        if f"p_{titulo}" in st.session_state:
-            p = st.session_state[f"p_{titulo}"]
+        # Exibição dos resultados se a chave existir
+        if f"prob_{titulo}" in st.session_state:
+            p = st.session_state[f"prob_{titulo}"]
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            # Cálculos seguros (garantindo que p é um número)
             prob = float(p)
             v15 = min(prob + 5, 100)
             v25 = min(prob, 100)
@@ -69,9 +69,8 @@ def renderizar_bloco(titulo):
             
             mercado_escolhido = st.selectbox("Mercado de Envio", 
                                             ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
-                                            key=f"sel_{titulo}")
+                                            key=f"sel_mercado_{titulo}")
             
-            # Lógica automática
             if mercado_escolhido == "Automático":
                 if prob >= 80: m_final = "Over 2.5 FT"
                 elif prob >= 65: m_final = "Over 1.5 FT"
@@ -80,12 +79,12 @@ def renderizar_bloco(titulo):
             else:
                 m_final = mercado_escolhido
             
-            prob_ajustada = st.text_input("Ajustar Prob (%)", value=f"{prob:.1f}", key=f"inp_{titulo}")
+            prob_ajustada = st.text_input("Ajustar Prob (%)", value=f"{prob:.1f}", key=f"adj_{titulo}")
             
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {m_final}\n📈 Probabilidade: {prob_ajustada}%\n⏰ {hora}"
             st.info(msg)
             
-            if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
+            if st.button(f"🚀 ENVIAR {titulo}", key=f"send_{titulo}", type="primary"):
                 if token and chat_id:
                     requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
                                   data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
@@ -93,7 +92,6 @@ def renderizar_bloco(titulo):
                 else:
                     st.error("Configure o Token e ID no menu lateral!")
 
-# Layout
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO_A")
 with col_b: renderizar_bloco("JOGO_B")
