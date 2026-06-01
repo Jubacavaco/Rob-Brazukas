@@ -34,7 +34,7 @@ def get_msg(tipo, camp, casa, vis, hora):
         "BTTS": "🎯 *Mercado:* BTTS\n💥 *Prognóstico:* Ambas - SIM\n⏰ *Horário:* " + hora,
         "LTD": "🎯 *Mercado:* Match Odd´s\n💥 *Prognóstico:* Contra o Empate (LTD)\n⏰ *Horário:* " + hora
     }
-    return base + corpos.get(tipo, "") + rodape
+    return base + corpos.get(tipo, "Entrada Padrão") + rodape
 
 # --- FUNÇÃO DO BLOCO COM BOTÕES ---
 def gerar_bloco(titulo):
@@ -58,10 +58,12 @@ def gerar_bloco(titulo):
                     st.session_state[f"msg_id_{titulo}"] = resp["result"]["message_id"]
                     st.session_state[f"msg_txt_{titulo}"] = msg
                     st.success(f"Sinal {titulo} enviado!")
+                else:
+                    st.error("Erro no envio! Verifique Token/ID.")
             else:
                 st.warning("Probabilidade insuficiente.")
 
-    # Botões de Resultado abaixo do formulário
+    # Botões de Resultado
     if f"msg_id_{titulo}" in st.session_state:
         st.write(f"--- Controle {titulo} ---")
         c1, c2, c3 = st.columns(3)
@@ -70,6 +72,13 @@ def gerar_bloco(titulo):
             txt = st.session_state[f"msg_txt_{titulo}"] + f"\n\n🔄 *Status:* {status}"
             requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
                           data={"chat_id": chat_id, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
+            st.success(f"Status atualizado: {status}")
         
         if c1.button("✅ GREEN", key=f"g_{titulo}"): registrar("✅ GREEN!!")
-        if c2.button("❌ RED", key=f"r_{titulo}"): registrar("
+        if c2.button("❌ RED", key=f"r_{titulo}"): registrar("❌ RED!")
+        if c3.button("🔄 DEV", key=f"d_{titulo}"): registrar("🔄 DEVOLVIDA")
+
+# --- LAYOUT DUAL ---
+col1, col2 = st.columns(2)
+with col1: gerar_bloco("Jogo_1")
+with col2: gerar_bloco("Jogo_2")
