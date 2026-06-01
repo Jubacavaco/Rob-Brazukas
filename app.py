@@ -69,22 +69,41 @@ def renderizar_bloco(titulo):
         
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
             p = calcular_probabilidade(lista)
-            mercado = "Over 1.5 FT" if p >= 70 else ("Ambas Marcam (BTTS)" if p >= 50 else "LTD")
-            st.session_state.db[titulo].update({"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p, "mercado": mercado})
+            st.session_state.db[titulo].update({
+                "camp": camp, "hora": hora, "casa": casa, "vis": vis, 
+                "placar": placar, "lista": lista, "prob": p
+            })
             salvar_db(st.session_state.db)
             st.rerun()
         
         if "prob" in st.session_state.db[titulo]:
             p = st.session_state.db[titulo]["prob"]
-            mercado_sugerido = st.session_state.db[titulo].get("mercado", "LTD")
-            
             st.markdown("---")
-            st.metric("Probabilidade Calculada", f"{p:.1f}%")
+            st.write("📊 **Análise de Mercados:**")
             
-            mercado_escolhido = st.selectbox("Definir Mercado de Envio", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
-            mercado_final = mercado_sugerido if mercado_escolhido == "Automático" else mercado_escolhido
+            # Exibir gráficos de todos os mercados sempre
+            cols = st.columns(4)
+            cols[0].write("Over 1.5")
+            cols[0].progress(min((p+5)/100, 1.0))
+            cols[1].write("Over 2.5")
+            cols[1].progress(min(p/100, 1.0))
+            cols[2].write("BTTS")
+            cols[2].progress(min(p/110, 1.0))
+            cols[3].write("LTD")
+            cols[3].progress(min((100-p)/100, 1.0))
             
-            st.write(f"🎯 **Envio:** {mercado_final}")
+            mercado_escolhido = st.selectbox("Definir Mercado de Envio", 
+                                            ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
+                                            key=f"sel_{titulo}")
+            
+            # Lógica automática
+            if mercado_escolhido == "Automático":
+                if p >= 70: mercado_final = "Over 1.5 FT"
+                elif p >= 50: mercado_final = "Ambas Marcam (BTTS)"
+                else: mercado_final = "LTD"
+            else:
+                mercado_final = mercado_escolhido
+            
             prob_val = st.text_input("Ajustar Prob (%)", value=str(round(p, 1)), key=f"inp_{titulo}")
             
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {mercado_final}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
