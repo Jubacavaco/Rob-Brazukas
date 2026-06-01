@@ -3,7 +3,7 @@ import requests
 import re
 
 st.set_page_config(layout="wide")
-st.title("🤖 Painel Brazukas - Gestão Completa")
+st.title("🤖 Painel Brazukas - Gestão com Gráficos")
 
 # Sidebar
 token = st.sidebar.text_input("Token Telegram", type="password")
@@ -27,27 +27,34 @@ def renderizar_bloco(titulo):
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
         p = calcular_probabilidade(lista)
         st.session_state[f"prob_{titulo}"] = p
-        st.write(f"📈 **Probabilidade:** {p:.1f}%")
         
-        # Gráficos de cada mercado
-        st.caption("Visualização de Mercados:")
-        st.write("Over 1.5 FT")
-        st.progress(min((p+5)/100, 1.0))
-        st.write("Over 2.5 FT")
-        st.progress(min(p/100, 1.0))
-        st.write("Ambas (BTTS)")
-        st.progress(min((p-10)/100, 1.0))
-        st.write("LTD")
-        st.progress(min((p-15)/100, 1.0))
+        # Gráficos com números
+        st.write("📊 **Acompanhamento Visual:**")
         
-        # Lógica de seleção
+        val_o15 = min((p+5), 100)
+        st.write(f"Over 1.5 FT ({val_o15}%)")
+        st.progress(val_o15/100)
+        
+        val_o25 = min(p, 100)
+        st.write(f"Over 2.5 FT ({val_o25}%)")
+        st.progress(val_o25/100)
+        
+        val_btts = min((p-10), 100)
+        st.write(f"Ambas Marcam ({max(0, val_btts)}%)")
+        st.progress(max(0, val_btts)/100)
+        
+        val_ltd = min((p-15), 100)
+        st.write(f"LTD ({max(0, val_ltd)}%)")
+        st.progress(max(0, val_ltd)/100)
+        
+        # Lógica de seleção (mantendo a mensagem original)
         tipo = "LTD" if p >= 51 else None
         if p >= 55: tipo = "BTTS"
         if p >= 70: tipo = "Over 1.5 FT"
         if p >= 65: tipo = "Over 2.5 FT"
         
         if tipo:
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n📌 Confiança: {p:.1f}%\n⚠️ Aposte com responsabilidade."
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
             st.info(msg)
             st.session_state[f"msg_{titulo}"] = msg
             
