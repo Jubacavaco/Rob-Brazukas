@@ -81,16 +81,22 @@ def renderizar_bloco(titulo):
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            # Exibir gráficos de todos os mercados sempre
+            # Cálculo das porcentagens de cada mercado
+            v15 = min(p + 5, 100)
+            v25 = min(p, 100)
+            vBTTS = min(p + 2, 100)
+            vLTD = min(100 - p, 100)
+            
+            # Exibir gráficos com números
             cols = st.columns(4)
-            cols[0].write("Over 1.5")
-            cols[0].progress(min((p+5)/100, 1.0))
-            cols[1].write("Over 2.5")
-            cols[1].progress(min(p/100, 1.0))
-            cols[2].write("BTTS")
-            cols[2].progress(min(p/110, 1.0))
-            cols[3].write("LTD")
-            cols[3].progress(min((100-p)/100, 1.0))
+            cols[0].write(f"Over 1.5: **{v15:.0f}%**")
+            cols[0].progress(v15/100)
+            cols[1].write(f"Over 2.5: **{v25:.0f}%**")
+            cols[1].progress(v25/100)
+            cols[2].write(f"BTTS: **{vBTTS:.0f}%**")
+            cols[2].progress(vBTTS/100)
+            cols[3].write(f"LTD: **{vLTD:.0f}%**")
+            cols[3].progress(vLTD/100)
             
             mercado_escolhido = st.selectbox("Definir Mercado de Envio", 
                                             ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
