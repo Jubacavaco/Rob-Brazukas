@@ -70,4 +70,42 @@ def renderizar_bloco(titulo):
             cols_g[1].progress(min(p/100, 1.0))
             
             prob_val = st.text_input("Ajustar Probabilidade (%)", value=str(round(p, 1)), key=f"inp_{titulo}")
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n📈 *Probabilidade:* {prob_val}%\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com
+            
+            # Formatação segura usando """ para evitar o erro de sintaxe
+            msg = f"""🚨 *Alerta de Entrada* 🚨
+
+🏆 *Campeonato:* {camp}
+🆚 *Jogo:* {casa} x {vis}
+📈 *Probabilidade:* {prob_val}%
+⏰ *Horário:* {hora}
+
+⚠️ Aposte com responsabilidade."""
+            
+            st.info(msg)
+            
+            if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
+                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+                r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+                if r.get("ok"): 
+                    st.session_state.db[titulo].update({"id": r["result"]["message_id"], "msg": msg})
+                    salvar_db(st.session_state.db)
+                    st.rerun()
+
+        if "id" in st.session_state.db[titulo]:
+            st.markdown("---")
+            b1, b2, b3 = st.columns(3)
+            def editar_telegram(status, status_visual):
+                msg_id = st.session_state.db[titulo]["id"]
+                original_msg = st.session_state.db[titulo]["msg"]
+                new_msg = f"{original_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
+                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                              data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
+                st.success("Atualizado!")
+            
+            if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
+            if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
+            if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
+
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
