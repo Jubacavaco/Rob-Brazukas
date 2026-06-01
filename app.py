@@ -2,68 +2,79 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(page_title="Sistema Brazukas", layout="wide")
+st.set_page_config(layout="wide")
+st.title("🤖 Painel Brazukas - Gestão Total")
 
-st.title("⚽ Brazukas Master Dashboard")
-
-# CONFIGURAÇÕES NO TOPO (Visíveis para que nunca percas a visão)
-st.subheader("🔑 Configurações de Envio")
-col_cfg1, col_cfg2 = st.columns(2)
-token = col_cfg1.text_input("Token Telegram", type="password")
-chat_id = col_cfg2.text_input("ID Canal", type="password")
-
-st.markdown("---")
+# Sidebar
+token = st.sidebar.text_input("Token Telegram", type="password")
+chat_id = st.sidebar.text_input("ID Canal", type="password")
 
 def calcular_probabilidade(texto):
-    numeros = re.findall(r'\b[0-9]\b', re.sub(r'\d{2}\.\d{2}\.\d{2}', '', texto))
-    gols = [int(n) for n in numeros]
+    numeros = re.findall(r'\d+', texto)
+    gols = [int(n) for n in numeros if int(n) <= 10]
     if len(gols) < 2: return 0
-    return min((sum(gols) / len(gols)) * 65, 100)
+    media = sum(gols) / len(gols)
+    return min(media * 35, 100)
 
 def renderizar_bloco(titulo):
-    with st.container():
-        st.subheader(f"🏟️ {titulo}")
+    st.subheader(f"🏟️ {titulo}")
+    
+    camp = st.text_input(f"Campeonato ({titulo})", key=f"c_{titulo}")
+    casa = st.text_input(f"Casa ({titulo})", key=f"ca_{titulo}")
+    vis = st.text_input(f"Visitante ({titulo})", key=f"v_{titulo}")
+    hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
+    lista = st.text_area(f"Lista de jogos ({titulo})", key=f"l_{titulo}")
+    
+    if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
+        st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
+        st.rerun()
+    
+    if f"prob_{titulo}" in st.session_state:
+        p = st.session_state[f"prob_{titulo}"]
         
-        col1, col2, col3 = st.columns([2, 1, 1])
-        camp = col1.text_input("Campeonato", key=f"c_{titulo}")
-        hora = col2.text_input("Horário", key=f"h_{titulo}")
-        placar = col3.text_input("Placar", key=f"p_{titulo}")
+        st.write("📊 **Acompanhamento Visual:**")
+        st.write(f"Over 1.5 FT ({min(p+5, 100)}%)"); st.progress(min((p+5)/100, 1.0))
+        st.write(f"Over 2.5 FT ({min(p, 100)}%)"); st.progress(min(p/100, 1.0))
+        st.write(f"Ambas Marcam ({max(0, p-10)}%)"); st.progress(max(0, p-10)/100)
+        st.write(f"LTD ({max(0, p-15)}%)"); st.progress(max(0, p-15)/100)
         
-        c4, c5 = st.columns(2)
-        casa = c4.text_input("Casa", key=f"ca_{titulo}")
-        vis = c5.text_input("Visitante", key=f"vi_{titulo}")
+        # A linha abaixo foi unida para evitar quebra de linha no código
+        mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         
-        lista = st.text_area("Lista de jogos (Histórico)", key=f"l_{titulo}", height=70)
+        if mercado == "Automático":
+            if p >= 70: tipo = "Over 1.5 FT"
+            elif p >= 65: tipo = "Over 2.5 FT"
+            elif p >= 55: tipo = "Ambas Marcam (BTTS)"
+            else: tipo = "LTD"
+        else:
+            tipo = mercado
         
-        if st.button(f"Analisar {titulo}", key=f"btn_{titulo}"):
-            st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
-            st.rerun()
+        st.write(f"🎯 Mercado selecionado: **{tipo}**")
+        
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        st.info(msg)
+        st.session_state[f"msg_{titulo}"] = msg
+        
+        if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}"):
+            payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
+            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
+            if r.get("ok"): 
+                st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
+                st.rerun()
 
-        if f"res_{titulo}" in st.session_state:
-            p = st.session_state[f"res_{titulo}"]
-            st.markdown("---")
-            
-            cols = st.columns(4)
-            mercados = ["O 1.5", "O 2.5", "BTTS", "LTD"]
-            valores = [min(p+5, 100), min(p, 100), min(p+2, 100), min(100-p, 100)]
-            
-            for i, c in enumerate(cols):
-                c.metric(mercados[i], f"{valores[i]:.0f}%")
-                c.progress(valores[i]/100)
+    if f"id_{titulo}" in st.session_state:
+        st.write("---")
+        c1, c2, c3 = st.columns(3)
+        def editar_telegram(status):
+            new_msg = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
+            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
+                          data={"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": new_msg, "parse_mode": "Markdown"})
+            st.success(f"Registrado: {status}")
 
-            m_sel = st.selectbox("Mercado de Envio", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-            
-            msg = f"🚨 *Alerta Brazukas* 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {m_sel}\n📈 Prob: {p:.1f}%"
-            st.info(msg)
-            
-            if st.button(f"🚀 ENVIAR {titulo}", key=f"send_{titulo}", type="primary"):
-                if token and chat_id:
-                    requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
-                    st.success("Enviado com sucesso!")
-                else:
-                    st.error("Preencha o Token e o ID no topo da página!")
+        if c1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("✅ GREEN!!")
+        if c2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("❌ RED!")
+        if c3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("🔄 DEVOLVIDA")
 
-# Layout Lado a Lado
-col_a, col_b = st.columns(2)
-with col_a: renderizar_bloco("JOGO A")
-with col_b: renderizar_bloco("JOGO B")
+col1, col2 = st.columns(2)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
