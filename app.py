@@ -10,16 +10,11 @@ token = st.sidebar.text_input("Token Telegram", type="password")
 chat_id = st.sidebar.text_input("ID Canal", type="password")
 
 def calcular_probabilidade(texto):
-    # Remove padrões de data (dd.mm.yy)
     texto_limpo = re.sub(r'\d{2}\.\d{2}\.\d{2}', '', texto)
-    # Extrai apenas números de um dígito (0-9)
     numeros = re.findall(r'\b[0-9]\b', texto_limpo)
     gols = [int(n) for n in numeros]
-    
     if len(gols) < 2: return 0
-    
     media = sum(gols) / len(gols)
-    # Multiplicador 65
     return min(media * 65, 100)
 
 def renderizar_bloco(titulo):
@@ -34,33 +29,35 @@ def renderizar_bloco(titulo):
     
     # ANÁLISE
     if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
-        st.session_state[f"prob_{titulo}"] = calcular_probabilidade(lista)
+        p = calcular_probabilidade(lista)
+        st.session_state[f"prob_{titulo}"] = p
+        # Regras automáticas sugeridas
+        st.session_state[f"conf_{titulo}"] = round(p, 1)
+        st.session_state[f"stake_{titulo}"] = "1.0%" if p < 70 else "2.0%"
         st.rerun()
     
     # RESULTADOS
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
         
-        # TODOS OS GRÁFICOS SEMPRE VISÍVEIS
         st.write("📊 **Acompanhamento Visual:**")
-        st.write(f"Over 1.5 FT ({min(p+5, 100):.1f}%)")
-        st.progress(min((p+5)/100, 1.0))
-        st.write(f"Over 2.5 FT ({min(p, 100):.1f}%)")
-        st.progress(min(p/100, 1.0))
-        st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)")
-        st.progress(max(0, p-10)/100)
-        st.write(f"LTD ({max(0, 100-p):.1f}%)")
-        st.progress(max(0, 100-p)/100)
+        st.write(f"Over 1.5 FT ({min(p+5, 100):.1f}%)"); st.progress(min((p+5)/100, 1.0))
+        st.write(f"Over 2.5 FT ({min(p, 100):.1f}%)"); st.progress(min(p/100, 1.0))
+        st.write(f"Ambas Marcam ({max(0, p-10):.1f}%)"); st.progress(max(0, p-10)/100)
+        st.write(f"LTD ({max(0, 100-p):.1f}%)"); st.progress(max(0, 100-p)/100)
         
-        # SELEÇÃO DE MERCADO
+        # CAMPOS EDITÁVEIS
+        col_a, col_b = st.columns(2)
+        conf = col_a.text_input("Confiança (%)", value=str(st.session_state.get(f"conf_{titulo}", "")), key=f"inp_conf_{titulo}")
+        stake = col_b.text_input("Stake Recomendada", value=str(st.session_state.get(f"stake_{titulo}", "")), key=f"inp_stake_{titulo}")
+        
         mercado = st.selectbox(f"Definir Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
-        
         tipo = mercado if mercado != "Automático" else ("Over 1.5 FT" if p >= 70 else "LTD")
         
-        st.write(f"🎯 Mercado selecionado: **{tipo}**")
+        st.write(f"🎯 Mercado: **{tipo}** | Confiança: **{conf}%** | Stake: **{stake}**")
         
-        # MENSAGEM
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
+        # MENSAGEM FINAL
+        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Confiança:* {conf}%\n💰 *Stake:* {stake}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
         
         st.info(msg)
         st.session_state[f"msg_{titulo}"] = msg
@@ -72,7 +69,7 @@ def renderizar_bloco(titulo):
                 st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
                 st.rerun()
 
-    # CONTROLE DE RESULTADOS
+    # CONTROLE
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         c1, c2, c3 = st.columns(3)
