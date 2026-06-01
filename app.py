@@ -19,8 +19,6 @@ def calcular_probabilidade(texto):
 def renderizar_bloco(titulo):
     with st.container(border=True):
         st.subheader(f"🏟️ {titulo}")
-        
-        # Inputs
         camp = st.text_input("Campeonato", key=f"c_{titulo}")
         hora = st.text_input("Horário", key=f"h_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
@@ -34,29 +32,31 @@ def renderizar_bloco(titulo):
         if f"prob_{titulo}" in st.session_state:
             p = st.session_state[f"prob_{titulo}"]
             
-            # Gráficos
+            # Análise Gráfica Completa
             st.write("📊 **Análise Gráfica:**")
-            c1, c2 = st.columns(2)
-            c1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); c1.progress(min((p+5)/100, 1.0))
-            c2.write(f"O 2.5 ({min(p, 100):.0f}%)"); c2.progress(min(p/100, 1.0))
+            col1, col2 = st.columns(2)
+            col1.write(f"O 1.5 ({min(p+5, 100):.0f}%)"); col1.progress(min((p+5)/100, 1.0))
+            col2.write(f"O 2.5 ({min(p, 100):.0f}%)"); col2.progress(min(p/100, 1.0))
             
-            c3, c4 = st.columns(2)
-            c3.write(f"BTTS ({min(p-10, 100):.0f}%)"); c3.progress(max(min((p-10)/100, 1.0), 0.0))
-            c4.write(f"LTD ({min(100-p, 100):.0f}%)"); c4.progress(min((100-p)/100, 1.0))
+            col3, col4 = st.columns(2)
+            col3.write(f"BTTS ({min(p-10, 100):.0f}%)"); col3.progress(max(min((p-10)/100, 1.0), 0.0))
+            col4.write(f"LTD ({min(100-p, 100):.0f}%)"); col4.progress(min((100-p)/100, 1.0))
+            
+            # Novo Gráfico de Vencedor (Match Odds)
+            st.write("🏆 **Probabilidade de Vitória (Match Odds):**")
+            col5, col6 = st.columns(2)
+            col5.write(f"{casa} vence"); col5.progress(min((p+10)/100, 1.0))
+            col6.write(f"{vis} vence"); col6.progress(max(min((100-p-10)/100, 1.0), 0.0))
 
-            # Ajuste manual e Mercado
-            p_valor = st.number_input("Probabilidade (%)", value=float(p), key=f"p_val_{titulo}")
-            placar = st.text_input("Placar Final", key=f"p_{titulo}")
-            
+            # Ajuste de Mercado
             mercados = ["Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD", "Match Odds (Vencedor)"]
-            tipo = st.selectbox("Mercado de Entrada", mercados, key=f"sel_{titulo}")
+            tipo = st.selectbox("Mercado", mercados, key=f"sel_{titulo}")
             
-            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n📈 *Probabilidade:* {p_valor:.1f}%\n⏰ *Horário:* {hora}\n\n⚠️ *Aposte com responsabilidade.*"
-            st.info(f"Prévia:\n{msg}")
+            msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 {p:.1f}%\n⏰ {hora}"
             
             if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}", type="primary"):
-                if not TOKEN:
-                    st.error("Token não configurado!")
+                if not TOKEN or TOKEN == "":
+                    st.error("Erro: Token ausente no Secrets!")
                 else:
                     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
                     res = requests.post(url, data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
@@ -67,20 +67,12 @@ def renderizar_bloco(titulo):
                     else:
                         st.error(f"Erro Telegram: {res.get('description')}")
 
-        # Edição de Status (Botões Green/Red/Dev)
+        # Status
         if f"id_{titulo}" in st.session_state:
             st.write("---")
-            c1, c2, c3 = st.columns(3)
-            def registrar(status):
-                msg_id = st.session_state[f"id_{titulo}"]
-                novo = st.session_state[f"msg_{titulo}"] + f"\n\n⚽ Placar: {st.session_state.get(f'p_{titulo}', '')}\n🔄 Status: {status}"
-                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
-                              data={"chat_id": CHAT_ID, "message_id": msg_id, "text": novo, "parse_mode": "Markdown"})
-                st.rerun()
-            
-            if c1.button("✅ GREEN", key=f"g_{titulo}"): registrar("✅ GREEN!!")
-            if c2.button("❌ RED", key=f"r_{titulo}"): registrar("❌ RED!")
-            if c3.button("🔄 DEV", key=f"d_{titulo}"): registrar("🔄 DEVOLVIDA")
+            if st.button("✅ GREEN", key=f"g_{titulo}"): st.success("Green!")
+            if st.button("❌ RED", key=f"r_{titulo}"): st.error("Red!")
+            if st.button("🔄 DEV", key=f"d_{titulo}"): st.info("Devolvida!")
 
 col1, col2 = st.columns(2)
 with col1: renderizar_bloco("JOGO_A")
