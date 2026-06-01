@@ -7,6 +7,27 @@ import os
 # Configuração da página
 st.set_page_config(page_title="Sistema Brazukas", layout="wide")
 
+# CSS para um visual moderno e "limpo"
+st.markdown("""
+    <style>
+    /* Estilo dos cartões */
+    .stApp { background-color: #f8f9fa; }
+    div[data-testid="stVerticalBlock"] > div { border-radius: 15px; }
+    
+    /* Botões estilizados */
+    .stButton>button { 
+        border-radius: 10px; 
+        border: none; 
+        font-weight: 600; 
+        transition: 0.3s;
+    }
+    .stButton>button:hover { transform: scale(1.02); }
+    
+    /* Títulos e textos */
+    h1 { color: #1e3d59 !important; font-weight: 800 !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
 DB_FILE = "dados_brazukas.json"
 
 def carregar_db():
@@ -21,12 +42,15 @@ def salvar_db(data):
 
 if "db" not in st.session_state: st.session_state.db = carregar_db()
 
-st.markdown("<h1 style='text-align: center; color: #2E86C1;'>🤖 Sistema Brazukas Top Tisp</h1>", unsafe_allow_html=True)
-st.markdown("---")
+# Título centralizado
+st.markdown("<h1 style='text-align: center;'>🤖 Sistema Brazukas Top Tips</h1>", unsafe_allow_html=True)
+st.write("---")
 
 # Sidebar
-token = st.sidebar.text_input("Token Telegram", type="password")
-chat_id = st.sidebar.text_input("ID Canal", type="password")
+with st.sidebar:
+    st.header("⚙️ Configurações")
+    token = st.text_input("Token Telegram", type="password")
+    chat_id = st.text_input("ID Canal", type="password")
 
 def calcular_probabilidade(texto):
     texto_limpo = re.sub(r'\d{2}\.\d{2}\.\d{2}', '', texto)
@@ -37,75 +61,17 @@ def calcular_probabilidade(texto):
     return min(media * 65, 100)
 
 def renderizar_bloco(titulo):
-    with st.container(border=True):
+    # Usamos o container para criar o efeito de "cartão"
+    with st.container():
         st.subheader(f"🏟️ {titulo}")
         
         if titulo not in st.session_state.db: st.session_state.db[titulo] = {}
         d = st.session_state.db[titulo]
         
-        c1, c2 = st.columns(2)
-        camp = c1.text_input("Campeonato", value=d.get("camp", ""), key=f"c_{titulo}")
-        hora = c2.text_input("Horário", value=d.get("hora", ""), key=f"h_{titulo}")
+        col1, col2 = st.columns(2)
+        camp = col1.text_input("Campeonato", value=d.get("camp", ""), key=f"c_{titulo}")
+        hora = col2.text_input("Horário", value=d.get("hora", ""), key=f"h_{titulo}")
         
-        casa = st.text_input("Time Casa", value=d.get("casa", ""), key=f"ca_{titulo}")
-        vis = st.text_input("Time Visitante", value=d.get("vis", ""), key=f"v_{titulo}")
-        placar = st.text_input("Placar Final", value=d.get("placar", ""), key=f"p_{titulo}")
-        lista = st.text_area("Lista de jogos", value=d.get("lista", ""), key=f"l_{titulo}", height=100)
-        
-        if st.button(f"Analisar {titulo}", key=f"an_{titulo}", use_container_width=True):
-            p = calcular_probabilidade(lista)
-            st.session_state.db[titulo].update({"camp": camp, "hora": hora, "casa": casa, "vis": vis, "placar": placar, "lista": lista, "prob": p})
-            salvar_db(st.session_state.db)
-            st.rerun()
-        
-        if "prob" in st.session_state.db[titulo]:
-            p = st.session_state.db[titulo]["prob"]
-            st.markdown("---")
-            st.write("📊 **Probabilidades:**")
-            
-            cols_g = st.columns(2)
-            cols_g[0].write(f"Over 1.5: {min(p+5, 100):.0f}%")
-            cols_g[0].progress(min((p+5)/100, 1.0))
-            cols_g[1].write(f"Over 2.5: {min(p, 100):.0f}%")
-            cols_g[1].progress(min(p/100, 1.0))
-            
-            prob_val = st.text_input("Ajustar Probabilidade (%)", value=str(round(p, 1)), key=f"inp_{titulo}")
-            
-            # Formatação segura usando """ para evitar o erro de sintaxe
-            msg = f"""🚨 *Alerta de Entrada* 🚨
-
-🏆 *Campeonato:* {camp}
-🆚 *Jogo:* {casa} x {vis}
-📈 *Probabilidade:* {prob_val}%
-⏰ *Horário:* {hora}
-
-⚠️ Aposte com responsabilidade."""
-            
-            st.info(msg)
-            
-            if st.button(f"🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}", type="primary", use_container_width=True):
-                payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-                r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-                if r.get("ok"): 
-                    st.session_state.db[titulo].update({"id": r["result"]["message_id"], "msg": msg})
-                    salvar_db(st.session_state.db)
-                    st.rerun()
-
-        if "id" in st.session_state.db[titulo]:
-            st.markdown("---")
-            b1, b2, b3 = st.columns(3)
-            def editar_telegram(status, status_visual):
-                msg_id = st.session_state.db[titulo]["id"]
-                original_msg = st.session_state.db[titulo]["msg"]
-                new_msg = f"{original_msg}\n\n⚽ *Placar Final:* {placar}\n\n{status_visual}"
-                requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                              data={"chat_id": chat_id, "message_id": msg_id, "text": new_msg, "parse_mode": "Markdown"})
-                st.success("Atualizado!")
-            
-            if b1.button("✅ GREEN", key=f"g_{titulo}"): editar_telegram("GREEN", "🎉💰 ✅ **GREENZAÇOOO!!!** 💰🎉")
-            if b2.button("❌ RED", key=f"r_{titulo}"): editar_telegram("RED", "🔴 ❌ **RED!** ❌ 🔴")
-            if b3.button("🔄 DEV", key=f"d_{titulo}"): editar_telegram("DEVOLVIDA", "🔄 *Jogo Devolvido* 🔄")
-
-col1, col2 = st.columns(2)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
+        col_c, col_v, col_p = st.columns(3)
+        casa = col_c.text_input("Casa", value=d.get("casa", ""), key=f"ca_{titulo}")
+        vis = col_v.text_input("Visitante", value
