@@ -20,7 +20,7 @@ def calcular_probabilidade(texto):
 def gerar_mensagem(tipo, camp, casa, vis, hora):
     return f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
 
-# --- BLOCO PRINCIPAL (JOGO 1 E JOGO 2) ---
+# --- BLOCO PRINCIPAL ---
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     camp = st.text_input(f"Campeonato ({titulo})", key=f"c_{titulo}")
@@ -29,7 +29,6 @@ def renderizar_bloco(titulo):
     hora = st.text_input(f"Horário ({titulo})", key=f"h_{titulo}")
     lista = st.text_area(f"Lista de Jogos ({titulo})", key=f"l_{titulo}")
     
-    # 1. Botão de Análise
     if st.button(f"📊 Analisar {titulo}", key=f"btn_an_{titulo}"):
         prob = calcular_probabilidade(lista)
         st.session_state[f"prob_{titulo}"] = prob
@@ -49,23 +48,18 @@ def renderizar_bloco(titulo):
         else:
             st.warning("Probabilidade insuficiente.")
 
-    # 2. Botão de Envio (aparece após análise)
     if f"msg_{titulo}" in st.session_state:
         if st.button(f"🚀 Enviar {titulo}", key=f"btn_env_{titulo}"):
-            msg = st.session_state[f"msg_{titulo}"]
-            resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", 
-                               data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}).json()
+            payload = {"chat_id": chat_id, "text": st.session_state[f"msg_{titulo}"], "parse_mode": "Markdown"}
+            resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
             if resp.get("ok"):
                 st.session_state[f"id_{titulo}"] = resp["result"]["message_id"]
                 st.success("Sinal enviado!")
 
-    # 3. Botões de Resultado (aparecem após envio)
     if f"id_{titulo}" in st.session_state:
         st.write("---")
-        st.write("Registrar Resultado:")
         c1, c2, c3 = st.columns(3)
-        def registrar(status):
-            msg_id = st.session_state[f"id_{titulo}"]
-            txt = st.session_state[f"msg_{titulo}"] + f"\n\n🔄 *Status:* {status}"
-            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", 
-                          data={"chat_id": chat_id, "message
+        if c1.button("✅ GREEN", key=f"g_{titulo}"):
+            payload = {"chat_id": chat_id, "message_id": st.session_state[f"id_{titulo}"], "text": st.session_state[f"msg_{titulo}"] + "\n\n🔄 *Status:* ✅ GREEN!!", "parse_mode": "Markdown"}
+            requests.post(f"https://api.telegram.org/bot{token}/editMessageText", data=payload)
+        if c2.button("
