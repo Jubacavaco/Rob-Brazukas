@@ -3,8 +3,8 @@ import requests
 import re
 
 # Configuração da página
-st.set_page_config(layout="wide", page_title="Painel Brazukas")
-st.title("🤖 Painel Brazukas - Gestão Total")
+st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 # Tenta carregar o Token e ID do "Secrets" automaticamente
 try:
