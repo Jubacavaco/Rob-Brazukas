@@ -30,36 +30,6 @@ def renderizar_bloco(titulo):
     if f"prob_{titulo}" in st.session_state:
         p = st.session_state[f"prob_{titulo}"]
         st.write(f"📈 Probabilidade: {p:.1f}%")
+        st.progress(min(p/100, 1.0))
         
-        st.progress(min((p+5)/100, 1.0)); st.write(f"Over 1.5: {min(p+5, 100)}%")
-        st.progress(min(p/100, 1.0)); st.write(f"Over 2.5: {min(p, 100)}%")
-        
-        mercado = st.selectbox(f"Mercado ({titulo})", ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
-        
-        tipo = ""
-        if mercado == "Automático":
-            if p >= 70: tipo = "Over 1.5 FT"
-            elif p >= 65: tipo = "Over 2.5 FT"
-            elif p >= 55: tipo = "Ambas Marcam (BTTS)"
-            else: tipo = "LTD"
-        else:
-            tipo = mercado
-            
-        msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 *Campeonato:* {camp}\n🆚 *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}\n\n⚠️ Aposte com responsabilidade."
-        st.info(msg)
-        
-        if st.button(f"🚀 ENVIAR {titulo}", key=f"en_{titulo}"):
-            payload = {"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"}
-            r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=payload).json()
-            if r.get("ok"): 
-                st.session_state[f"id_{titulo}"] = r["result"]["message_id"]
-                st.success("Enviado!")
-
-    if f"id_{titulo}" in st.session_state:
-        st.write("---")
-        if st.button(f"✅ GREEN {titulo}", key=f"g_{titulo}"): st.write("GREEN registrado.")
-        if st.button(f"❌ RED {titulo}", key=f"r_{titulo}"): st.write("RED registrado.")
-
-col1, col2 = st.columns(2)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
+        mercado
