@@ -1,4 +1,3 @@
-
 import streamlit as st
 import requests
 import re
@@ -99,3 +98,4 @@ with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
 with col3: renderizar_bloco("JOGO_C")
 with col4: renderizar_bloco("JOGO_D")
+
