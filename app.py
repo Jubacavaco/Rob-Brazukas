@@ -42,11 +42,15 @@ def renderizar_bloco(titulo):
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
         sugestao = obter_sugestao(p15, p25, pbtts, pltd)
         
-        # Gráficos
+        # Gráficos Gols
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
         st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
-        st.progress(min(max(pc/100, 0), 1), text=f"Vit. Casa: {pc:.1f}%")
+        
+        # Gráficos Match Odds (CASA/VISITANTE/EMPATE)
+        st.progress(min(max(pc/100, 0), 1), text=f"Vit. {casa}: {pc:.1f}%")
+        st.progress(min(max(pv/100, 0), 1), text=f"Vit. {vis}: {pv:.1f}%")
+        st.progress(min(max(pe/100, 0), 1), text=f"Empate: {pe:.1f}%")
         
         tipo = st.selectbox("Mercado", [sugestao, "Over 2.5 FT", "Over 1.5 FT", "Ambas Marcam (BTTS)", "LTD"], key=f"sel_{titulo}")
         prob = prob_manual if prob_manual else f"{p25:.1f}"
@@ -67,11 +71,11 @@ def renderizar_bloco(titulo):
     if f"id_{titulo}" in st.session_state:
         st.write("---")
         c1, c2, c3 = st.columns(3)
-        if c1.button("✅", key=f"g_{titulo}"): st.success("Green registrado!")
-        if c2.button("❌", key=f"r_{titulo}"): st.error("Red registrado!")
+        if c1.button("✅", key=f"g_{titulo}"): st.success("Green!")
+        if c2.button("❌", key=f"r_{titulo}"): st.error("Red!")
         if c3.button("🔄", key=f"d_{titulo}"): st.warning("Devolvida!")
 
-# Layout direto
+# Layout direto em 4 colunas
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
