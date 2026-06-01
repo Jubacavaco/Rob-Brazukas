@@ -43,21 +43,23 @@ def renderizar_bloco(titulo):
         
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}", height=100)
         
+        # Botão Analisar
         if st.button(f"Analisar {titulo}", key=f"an_{titulo}"):
             st.session_state[f"p_{titulo}"] = calcular_probabilidade(lista)
             st.rerun()
             
-        # APENAS desenha o gráfico e envia se a probabilidade já tiver sido calculada
+        # Verifica se já existe probabilidade calculada
         if f"p_{titulo}" in st.session_state:
             p = st.session_state[f"p_{titulo}"]
             st.markdown("---")
             st.write("📊 **Análise de Mercados:**")
             
-            # Cálculos protegidos
-            v15 = min(p + 5, 100)
-            v25 = min(p, 100)
-            vBTTS = min(p + 2, 100)
-            vLTD = min(100 - p, 100)
+            # Cálculos seguros (garantindo que p é um número)
+            prob = float(p)
+            v15 = min(prob + 5, 100)
+            v25 = min(prob, 100)
+            vBTTS = min(prob + 2, 100)
+            vLTD = min(100 - prob, 100)
             
             cols = st.columns(4)
             cols[0].write(f"O 1.5: **{v15:.0f}%**"); cols[0].progress(v15/100)
@@ -69,15 +71,16 @@ def renderizar_bloco(titulo):
                                             ["Automático", "Over 1.5 FT", "Over 2.5 FT", "Ambas Marcam (BTTS)", "LTD"], 
                                             key=f"sel_{titulo}")
             
+            # Lógica automática
             if mercado_escolhido == "Automático":
-                if p >= 80: m_final = "Over 2.5 FT"
-                elif p >= 65: m_final = "Over 1.5 FT"
-                elif p >= 50: m_final = "Ambas Marcam (BTTS)"
+                if prob >= 80: m_final = "Over 2.5 FT"
+                elif prob >= 65: m_final = "Over 1.5 FT"
+                elif prob >= 50: m_final = "Ambas Marcam (BTTS)"
                 else: m_final = "LTD"
             else:
                 m_final = mercado_escolhido
             
-            prob_ajustada = st.text_input("Ajustar Prob (%)", value=f"{p:.1f}", key=f"inp_{titulo}")
+            prob_ajustada = st.text_input("Ajustar Prob (%)", value=f"{prob:.1f}", key=f"inp_{titulo}")
             
             msg = f"🚨 *Alerta de Entrada* 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {m_final}\n📈 Probabilidade: {prob_ajustada}%\n⏰ {hora}"
             st.info(msg)
@@ -90,6 +93,7 @@ def renderizar_bloco(titulo):
                 else:
                     st.error("Configure o Token e ID no menu lateral!")
 
+# Layout
 col_a, col_b = st.columns(2)
 with col_a: renderizar_bloco("JOGO_A")
 with col_b: renderizar_bloco("JOGO_B")
