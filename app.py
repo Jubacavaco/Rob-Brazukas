@@ -31,12 +31,13 @@ def calcular_probabilidade(texto):
 
     for linha in linhas:
 
-        numeros = re.findall(r'\d+', linha)
+        # PEGA SOMENTE PLACARES REAIS
+        placar = re.search(r'(\d+)\s*[xX\-]\s*(\d+)', linha)
 
-        if len(numeros) >= 2:
+        if placar:
 
-            g1 = int(numeros[-2])
-            g2 = int(numeros[-1])
+            g1 = int(placar.group(1))
+            g2 = int(placar.group(2))
 
             total += 1
 
