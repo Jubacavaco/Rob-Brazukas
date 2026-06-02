@@ -38,11 +38,19 @@ def calcular_probabilidades(lista_str):
         "Visitante Vence": round(min(70, max(10, (exp_a / (total + 0.1)) * 100)), 1),
     }
 
+def definir_aposta(res):
+    if res.get("Over 2.5 FT", 0) >= 65: return "Over 2.5 FT"
+    if res.get("BTTS", 0) >= 55: return "BTTS"
+    if res.get("LTD", 0) >= 51: return "LTD"
+    if res.get("Over 1.5 FT", 0) >= 75: return "Over 1.5 FT"
+    return "Nenhum mercado atingiu a meta"
+
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
+    
     mercado = st.selectbox("Mercado", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"mercado_{nome}")
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
@@ -58,6 +66,10 @@ def jogo_normal(nome):
         res = st.session_state.get(f"res_{nome}")
         st.write("### 📊 Resumo")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
+        
+        # Aposta Recomendada de volta
+        reco = definir_aposta(res)
+        st.success(f"🎯 Aposta Recomendada: {reco}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
