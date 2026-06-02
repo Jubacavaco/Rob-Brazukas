@@ -46,51 +46,46 @@ def jogo_normal(nome):
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
     mercado = st.selectbox("Mercado", ["Match Odds", "Gols"], key=f"merc_{nome}")
-    st.text_area("Lista de Análise", key=f"lista_{nome}")
+    horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
+    st.text_area("Lista de Análise", key=f"lista_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        # AQUI VOCÊ DEVE INSERIR O PARSING DA SUA LISTA REAL
-        # Mantive dados de exemplo para o cálculo rodar
-        data = {
-            "home_last_games_goals_scored": [2, 0, 1, 0, 4],
-            "home_last_games_goals_conceded": [4, 2, 7, 1, 1],
-            "away_last_games_goals_scored": [3, 2, 2, 2, 0],
-            "away_last_games_goals_conceded": [5, 1, 1, 2, 0],
-        }
+        data = {"home_last_games_goals_scored": [2,0,1,0,4], "home_last_games_goals_conceded": [4,2,7,1,1], "away_last_games_goals_scored": [3,2,2,2,0], "away_last_games_goals_conceded": [5,1,1,2,0]}
         st.session_state[f"res_{nome}"] = analyze_match(data)
         st.session_state[f"analise_{nome}"] = True
 
-    # VERIFICAÇÃO DE SEGURANÇA PARA EVITAR O ERRO
-    res = st.session_state.get(f"res_{nome}")
-    if st.session_state.get(f"analise_{nome}", False) and res is not None:
-        st.write("### 📊 Resumo Final")
-        for k, v in res.items(): 
-            st.write(f"**{k}:** {v}%")
-        
+    if st.session_state.get(f"analise_{nome}"):
+        res = st.session_state[f"res_{nome}"]
+        for k, v in res.items(): st.write(f"**{k}:** {v}%")
         melhor = max(res, key=res.get)
         st.success(f"🎯 Aposta Recomendada: {melhor}")
-
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {melhor}\n⏰ Finalizado"
+            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {melhor}\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
-# JOGO C MANTIDO COMO ESTAVA
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
+    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
+    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
+    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
-    e_casa_atual = st.number_input("Cantos Casa", step=1, key="e_casa_c")
-    e_vis_atual = st.number_input("Cantos Fora", step=1, key="e_vis_c")
+    e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, key="e_casa_c")
+    e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, key="e_vis_c")
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
-    if st.session_state.get("analise_c", False):
+    if st.session_state.get("analise_c"):
         st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
-        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"): telegram("Alerta C")
+        linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
+        conf = st.slider("Confiança", 0, 100, 70, key="conf_c")
+        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
+            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}\n📈 Conf: {conf}%"
+            st.session_state["mid_c"] = telegram(msg)
 
 col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
