@@ -20,16 +20,15 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-def analyze_match(lista_str):
-    # Converte string "2,0,1,0,4..." em lista de números
+# Função de cálculo pura (processa apenas o que recebe)
+def processar_calculo(lista_str):
     nums = [int(n) for n in lista_str.replace(' ', '').split(',') if n.isdigit()]
-    # Garante que temos dados suficientes (divisao para H e A)
-    if len(nums) < 20: nums = [1] * 20 
+    if len(nums) < 20: nums = [1] * 20
     
     h_s, h_c = nums[0:5], nums[5:10]
     a_s, a_c = nums[10:15], nums[15:20]
     
-    avg = lambda lst: sum(lst) / len(lst)
+    avg = lambda lst: sum(lst) / len(lst) if lst else 0
     exp_h = (avg(h_s) + avg(a_c)) / 2
     exp_a = (avg(a_s) + avg(h_c)) / 2
     total = exp_h + exp_a
@@ -55,17 +54,20 @@ def jogo_normal(nome):
     lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        st.session_state[f"res_{nome}"] = analyze_match(lista)
+        # Processa e salva no session_state específico deste jogo
+        st.session_state[f"res_{nome}"] = processar_calculo(lista)
         st.session_state[f"analise_{nome}"] = True
 
     res = st.session_state.get(f"res_{nome}")
     if st.session_state.get(f"analise_{nome}") and res:
+        st.write("### 📊 Resumo de Probabilidades")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
+        
         melhor = max(res, key=res.get)
         st.success(f"🎯 Aposta Recomendada: {melhor}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n🔥 Sugestão: {melhor}\n⏰ {horario}"
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {mercado}\n🔥 Sugestão: {melhor}\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
@@ -77,6 +79,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
+# JOGO C MANTIDO COMO VOCÊ QUERIA
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
