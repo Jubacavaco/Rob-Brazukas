@@ -25,25 +25,21 @@ def renderizar_grafico(data, labels, titulo):
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     
-    # Campos que estavam faltando foram todos restaurados abaixo:
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     
     if titulo == "JOGO_D":
         hora = st.text_input("Horário", key=f"h_{titulo}")
-        # Restauradas as médias e cantos
-        med_time = st.number_input("Média Time", key=f"mt_{titulo}")
-        med_liga = st.number_input("Média Liga", key=f"ml_{titulo}")
-        cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
-        cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
+        # Simplificado: apenas uma média de escanteios do time e uma da liga
+        med_time = st.number_input("Média Escanteios Time", key=f"mt_{titulo}")
+        med_liga = st.number_input("Média Escanteios Liga", key=f"ml_{titulo}")
         linha = st.text_input("Linha de Escanteios (Ex: 8.5)", key=f"lin_{titulo}")
         
         if st.button("📊 ANALISAR JOGO D", key=f"an_{titulo}"):
             st.session_state[f"ativo_{titulo}"] = True
-            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "mt": med_time, "ml": med_liga, "cc": cc, "cv": cv, "linha": linha}
+            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "med_time": med_time, "med_liga": med_liga, "linha": linha}
     else:
-        # Restaurada a estrutura dos jogos A, B, C
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         prob = st.text_input("Probabilidade (%)", key=f"pb_{titulo}")
         mercado = st.text_input("Mercado (Ex: O1.5)", key=f"merc_{titulo}")
