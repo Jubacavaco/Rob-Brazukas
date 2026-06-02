@@ -12,15 +12,31 @@ def renderizar_bloco(titulo):
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
+    
+    # Novos Campos Solicitados
+    media_time = st.text_input("Média Time", key=f"mt_{titulo}")
+    media_liga = st.text_input("Média Liga", key=f"ml_{titulo}")
+    
     cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
     cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
-    mercado = st.selectbox("Mercado", ["Over", "Under"], key=f"m_{titulo}")
-    entrada = st.text_input("Entrada (ex: 8.5)", key=f"e_{titulo}")
+    
+    over_under = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
+    entrada = st.text_input("Linha (Ex: 8.5)", key=f"e_{titulo}")
     odd = st.text_input("Odd", key=f"o_{titulo}")
     
     total = int(cc + cv)
-    msg_base = (f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n"
-                f"🎯 Mercado: {mercado}\n💎 Entrada: {entrada}\n💰 Odd: {odd}\n🕒 Horário: {hora} (BR)")
+    
+    # Formato do Mercado solicitado: "Cantos Asiáticos (Over/Under)"
+    mercado_texto = f"Cantos Asiáticos ({over_under} {entrada})"
+
+    msg_base = (f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n"
+                f"🏆 Campeonato: {camp}\n"
+                f"⚔️ Confronto: {casa} x {vis}\n"
+                f"🎯 Mercado: {mercado_texto}\n"
+                f"💎 Entrada: {entrada}\n"
+                f"💰 Odd: {odd}\n"
+                f"📈 Média Time: {media_time} | Média Liga: {media_liga}\n"
+                f"🕒 Horário: {hora} (BR)")
 
     if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
         res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg_base}).json()
@@ -31,8 +47,11 @@ def renderizar_bloco(titulo):
 
     if f"id_{titulo}" in st.session_state:
         def editar(status, extra=""):
-            new_text = (f"{st.session_state[f'msg_{titulo}']}\n\n🏠 Cantos Casa: {cc}\n✈️ Cantos Visitante: {cv}\n"
-                        f"📊 Total de Cantos: {total}\n\n{status}\n{extra}")
+            new_text = (f"{st.session_state[f'msg_{titulo}']}\n\n"
+                        f"🏠 Cantos Casa: {cc}\n"
+                        f"✈️ Cantos Visitante: {cv}\n"
+                        f"📊 Total de Cantos: {total}\n\n"
+                        f"{status}\n{extra}")
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
                           data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text})
 
