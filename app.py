@@ -33,15 +33,32 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}"):
-        st.bar_chart({"O 1.5": 80, "O 2.5": 60, "BTTS": 70, "LTD": 40, "CASA": 65, "VIS": 20})
+        # Valores exemplo para o resumo (você pode substituir pela sua lógica de cálculo)
+        p15, p25, pbtts, pltd, pc, pv, pe = 85, 60, 75, 40, 65, 30, 5
+        
+        # --- RESUMO FINAL E GRÁFICO ---
+        st.write("### 📊 Resumo Final")
+        st.markdown(f"| Mercado | Probabilidade |\n|---|---|\n| ✅ Over 1.5 FT | {p15}% |\n| ⚠️ Over 2.5 FT | {p25}% |\n| ⚠️ BTTS | {pbtts}% |\n| 🔥 LTD | {pltd}% |")
+        st.bar_chart({"O 1.5": p15, "O 2.5": p25, "BTTS": pbtts, "LTD": pltd})
 
+        # --- MERCADOS E PLACARES ---
+        col_m, col_p = st.columns(2)
+        with col_m:
+            st.write("### 🎯 Mercados Fortes")
+            if p15 >= 75: st.write("✅ Over 1.5 FT — Muito Forte")
+            if pltd >= 80: st.write("🔥 LTD — Muito Forte")
+        with col_p:
+            st.write("### 📌 Placares Sugeridos")
+            st.write(f"• 1x0 | 1x1 | 2x0")
+
+        # --- ENVIO TELEGRAM ---
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
+            msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}\n\n🔞Aposte com responsabilidade."
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
-            base = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)"
+            base = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n⏰ Horário: {horario}"
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"):
                 telegram(f"{base}\nHT: ({ht})\n\n⚪ Em Andamento", mid)
@@ -66,7 +83,6 @@ def jogo_d():
         if c2.button("🏆 FINAL", key="d_fng"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🏆🏆🏆", mid)
         if c2.button("❌ RED", key="d_fnr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n❌❌❌", mid)
 
-# Layout das 4 colunas restaurado
 c1, c2, c3, c4 = st.columns(4)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
