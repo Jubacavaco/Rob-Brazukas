@@ -276,13 +276,12 @@ def renderizar_bloco(titulo):
         # =========================
         if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
 
-            res = requests.post(
-                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                data={
-                    "chat_id": CHAT_ID,
-                    "text": msg_base
-                }
-            ).json()
+          res = requests.post(
+    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+    data={"chat_id": CHAT_ID, "text": msg}
+)
+
+st.write(res.text)
 
             if res.get("ok"):
 
