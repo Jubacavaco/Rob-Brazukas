@@ -8,35 +8,18 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-# Função centralizada para comunicação com o Telegram
+# Função para enviar ou editar a mensagem no Telegram mantendo o estilo
 def enviar_ou_editar(nome, msg):
     url_base = f"https://api.telegram.org/bot{TOKEN}"
+    payload = {"chat_id": CHAT_ID, "text": msg}
+    
     if f"msg_id_{nome}" in st.session_state:
-        # Edita mensagem existente
-        requests.post(f"{url_base}/editMessageText", json={
-            "chat_id": CHAT_ID, 
-            "message_id": st.session_state[f"msg_id_{nome}"], 
-            "text": msg
-        })
+        payload["message_id"] = st.session_state[f"msg_id_{nome}"]
+        requests.post(f"{url_base}/editMessageText", json=payload)
     else:
-        # Envia nova e salva o ID
-        resp = requests.post(f"{url_base}/sendMessage", json={"chat_id": CHAT_ID, "text": msg}).json()
+        resp = requests.post(f"{url_base}/sendMessage", json=payload).json()
         if resp.get("ok"):
             st.session_state[f"msg_id_{nome}"] = resp["result"]["message_id"]
-
-def renderizar_grafico(dados):
-    labels, valores = list(dados.keys()), list(dados.values())
-    components.html(f"""
-    <div style="height:250px;"><canvas id="chart"></canvas></div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-    new Chart(document.getElementById('chart'), {{
-        type: 'bar',
-        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#3b82f6' }}] }},
-        options: {{ responsive: true, maintainAspectRatio: false }}
-    }});
-    </script>
-    """, height=280)
 
 def calcular_probabilidades(lista):
     return {"BTTS": 61, "O1.5": 78, "O2.5": 52, "LTD": 70, "Casa": 65, "Vis": 15}
@@ -54,38 +37,45 @@ def jogo_normal(nome):
         mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
         prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
         btn_analisar = st.form_submit_button("📊 ANALISAR")
-        btn_enviar = st.form_submit_button("🚀 ENVIAR")
+        btn_enviar = st.form_submit_button("🚀 ENVIAR ALERTA")
 
     if btn_analisar:
-        st.session_state[f"probs_{nome}"] = calcular_probabilidades(lista)
-        st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario, "ht": ht, "ft": ft}
+        st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
         st.rerun()
 
+    # Exibição dos botões de controle após envio
     if f"dados_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
-        renderizar_grafico(st.session_state.get(f"probs_{nome}", {}))
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): enviar_ou_editar(nome, f"⏱️ AO VIVO\n{d['casa']} x {d['vis']}\nHT: {d['ht']} | FT: {d['ft']}")
-            if st.button("✅ HT GREEN", key=f"htg_{nome}"): enviar_ou_editar(nome, f"✅ HT GREEN\n{d['casa']} x {d['vis']}\nHT: {d['ht']}")
+            if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): 
+                enviar_ou_editar(nome, f"⏱️ MOMENTO AO VIVO\n{d['casa']} x {d['vis']}\nPlacar: HT {d['ht']} | FT {d['ft']}")
+            if st.button("✅ HT GREEN", key=f"htg_{nome}"): 
+                enviar_ou_editar(nome, f"✅ HT GREEN!\n{d['casa']} x {d['vis']}\nPlacar HT: {d['ht']}")
         with col2:
-            if st.button("✅ FINAL GREEN", key=f"fng_{nome}"): enviar_ou_editar(nome, f"🏆 FINAL GREEN\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
-            if st.button("❌ RED", key=f"red_{nome}"): enviar_ou_editar(nome, f"❌ RED\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
+            if st.button("✅ FINAL GREEN", key=f"fng_{nome}"): 
+                enviar_ou_editar(nome, f"🏆 FINAL GREEN!\n{d['casa']} x {d['vis']}\nPlacar Final: {d['ft']}")
+            if st.button("❌ RED", key=f"red_{nome}"): 
+                enviar_ou_editar(nome, f"❌ RED!\n{d['casa']} x {d['vis']}\nPlacar Final: {d['ft']}")
 
+    # Envio inicial no formato solicitado
     if btn_enviar and f"dados_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
-        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n🎯 {mercado}\n📈 {prob}%\n⏰ {d['horario']}"
+        msg = f"""🚨 Alerta de Cantos 🚨
+
+🏆 Campeonato: {d['camp']}
+🆚 Jogo: {d['casa']} x {d['vis']}
+🎯 Mercado: {d['merc']}
+💥 Prognóstico: Analisado
+📈 Probabilidade: {d['prob']}%
+⏰ Horário: {d['horario']} (BR)
+
+🔞 Aposte com responsabilidade.
+⚠️ Não há garantias de lucro."""
         enviar_ou_editar(nome, msg)
 
-def jogo_d():
-    st.subheader("🏟️ JOGO_D")
-    with st.form("JOGO_D"):
-        linha = st.selectbox("Linha", [7.5, 8.5, 9.5])
-        if st.form_submit_button("ENVIAR AÇÃO"): enviar_telegram(f"JOGO D: {linha}")
-
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_normal("JOGO_C")
-with col4: jogo_d()
