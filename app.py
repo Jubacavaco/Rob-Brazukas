@@ -36,56 +36,53 @@ def calcular_probabilidade(texto):
 
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
-    
-    # Cada bloco usa chaves únicas baseadas no título (A, B, C, D)
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     
     if titulo == "JOGO_D":
         hora = st.text_input("Horário", key=f"h_{titulo}")
-        media_time = st.number_input("Média Time", key=f"mt_{titulo}")
-        media_liga = st.number_input("Média Liga", key=f"ml_{titulo}")
+        mt = st.number_input("Média Time", key=f"mt_{titulo}")
+        ml = st.number_input("Média Liga", key=f"ml_{titulo}")
         cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
         cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
         ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
-        entrada = st.text_input("Entrada", key=f"e_{titulo}")
+        ent = st.text_input("Entrada", key=f"e_{titulo}")
         
         if st.button("📊 ANALISAR", key=f"an_{titulo}"):
-            media_final = round(((media_time + media_liga) / 2) * 2) / 2
-            st.write(f"Média Final: {media_final:.1f}")
-            st.session_state[f"analise_{titulo}"] = True
+            st.session_state[f"analise_d_{titulo}"] = True
             
-        if st.session_state.get(f"analise_{titulo}") and st.button("🚀 ENVIAR", key=f"en_{titulo}"):
-            msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos Asiáticos ({ou} {entrada})\n💎 Entrada: {entrada}\n🕒 Horário: {hora} (BR){RODAPE}"
-            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-            if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
+        if st.session_state.get(f"analise_d_{titulo}"):
+            components.html("""<div style="background:#1e293b; padding:10px; color:white; border-radius:5px;">Análise Técnica Calculada</div>""", height=50)
+            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
+                msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos Asiáticos ({ou} {ent})\n💎 Entrada: {ent}\n🕒 Horário: {hora} (BR){RODAPE}"
+                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
+                if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
 
         if f"id_{titulo}" in st.session_state:
             def ed(status):
-                info_extras = f"\n\n--------------------\n🏠 Cantos Casa: {int(cc)}\n✈️ Cantos Visitante: {int(cv)}\n📊 Total de Cantos: {int(cc+cv)}"
-                txt = f"{st.session_state[f'msg_{titulo}'].replace(RODAPE, '')}{info_extras}\n\n{status if status != 'INFO' else ''}{RODAPE}"
+                info = f"\n\n--------------------\n🏠 Cantos Casa: {int(cc)}\n✈️ Cantos Visitante: {int(cv)}\n📊 Total de Cantos: {int(cc+cv)}"
+                st_txt = f"\n\n{status}" if status != "INFO" else ""
+                txt = f"{st.session_state[f'msg_{titulo}'].replace(RODAPE, '')}{info}{st_txt}{RODAPE}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f'id_{titulo}'], "text": txt})
             c1, c2, c3, c4 = st.columns(4)
             if c1.button("MOMENTO", key=f"mom_{titulo}"): ed("INFO")
             if c2.button("HT", key=f"ht_{titulo}"): ed("✅ GREEN HT ✅")
             if c3.button("HT 2", key=f"ht2_{titulo}"): ed("❌ RED HT ❌")
             if c4.button("FINAL", key=f"fin_{titulo}"): ed("✅ GREEN FINAL ✅")
-
     else:
-        # Lógica dos jogos A, B e C mantendo o estado no session_state
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
-        if st.button("Analisar", key=f"an_{titulo}"): st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
+        if st.button("Analisar", key=f"an_{titulo}"): 
+            st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
         
         if f"res_{titulo}" in st.session_state:
             res = st.session_state[f"res_{titulo}"]
             tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-            st.write(f"Probabilidades: Over 1.5: {res[3]}% | Over 2.5: {res[4]}%")
-            
-            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
-                msg = f"🚨 Alerta {titulo} 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 Probs calculadas{RODAPE}"
+            st.write(f"Prob: Over 1.5: {res[3]}% | Over 2.5: {res[4]}%")
+            if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
+                msg = f"🚨 Alerta {titulo} 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 Probs calculadas{RODAPE}"
                 res_tg = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-                st.session_state[f"id_{titulo}"] = res_tg["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
+                st.session_state[f"id_{titulo}"] = res_tg["result"]["message_id"]
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
