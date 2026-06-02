@@ -21,26 +21,25 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# Lógica Estatística Integrada
+# SUA FUNÇÃO DE CÁLCULO INTEGRADA
 def analyze_match(data):
     def avg(lst): return sum(lst) / len(lst) if lst else 0
-    home_attack = avg(data["home_last_games_goals_scored"])
-    home_defense = avg(data["home_last_games_goals_conceded"])
-    away_attack = avg(data["away_last_games_goals_scored"])
-    away_defense = avg(data["away_last_games_goals_conceded"])
-    expected_home_goals = (home_attack + away_defense) / 2
-    expected_away_goals = (away_attack + home_defense) / 2
-    total_goals = expected_home_goals + expected_away_goals
+    h_s = avg(data["home_last_games_goals_scored"])
+    h_c = avg(data["home_last_games_goals_conceded"])
+    a_s = avg(data["away_last_games_goals_scored"])
+    a_c = avg(data["away_last_games_goals_conceded"])
+    exp_h = (h_s + a_c) / 2
+    exp_a = (a_s + h_c) / 2
+    total = exp_h + exp_a
     return {
-        "Over 1.5 FT (%)": round(min(95, max(10, total_goals * 35)), 1),
-        "Over 2.5 FT (%)": round(min(90, max(5, (total_goals - 1.2) * 40)), 1),
-        "BTTS (%)": round(min(90, max(5, (expected_home_goals * expected_away_goals) * 30)), 1),
-        "Home Win (%)": round(min(70, max(10, (expected_home_goals / (total_goals + 0.1)) * 100)), 1),
-        "Away Win (%)": round(min(70, max(10, (expected_away_goals / (total_goals + 0.1)) * 100)), 1),
-        "Lay The Draw (%)": round(min(85, max(20, (total_goals * 20) - 10)), 1),
+        "Over 1.5 FT": round(min(95, max(10, total * 35)), 1),
+        "Over 2.5 FT": round(min(90, max(5, (total - 1.2) * 40)), 1),
+        "BTTS": round(min(90, max(5, (exp_h * exp_a) * 30)), 1),
+        "Home Win": round(min(70, max(10, (exp_h / (total + 0.1)) * 100)), 1),
+        "Away Win": round(min(70, max(10, (exp_a / (total + 0.1)) * 100)), 1),
+        "LTD": round(min(85, max(20, (total * 20) - 10)), 1),
     }
 
-# Função Jogo Normal (A e B)
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
@@ -51,46 +50,36 @@ def jogo_normal(nome):
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
     
-    st.write("---")
-    h_goals = st.text_input("Casa: Gols Feitos (ex: 2,0,1,0,4)", key=f"h_g_{nome}")
-    h_conc = st.text_input("Casa: Gols Sofridos (ex: 4,2,7,1,1)", key=f"h_c_{nome}")
-    a_goals = st.text_input("Visitante: Gols Feitos (ex: 3,2,2,2,0)", key=f"a_g_{nome}")
-    a_conc = st.text_input("Visitante: Gols Sofridos (ex: 5,1,1,2,0)", key=f"a_c_{nome}")
-
+    # LISTA DE ANÁLISE RESTAURADA
+    lista = st.text_area("Lista de Análise (Cole os números ex: 2,0,1,0,4)", key=f"lista_{nome}")
+    
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        try:
+        # Simulação de parsing da lista (se precisar de mais complexidade, ajuste aqui)
+        # Assumindo que a lista enviada tenha 20 números (5 de cada categoria)
+        nums = [int(n) for n in lista.replace(' ', '').split(',') if n.isdigit()]
+        if len(nums) >= 20:
             data = {
-                "home_last_games_goals_scored": [int(x) for x in h_goals.split(',')],
-                "home_last_games_goals_conceded": [int(x) for x in h_conc.split(',')],
-                "away_last_games_goals_scored": [int(x) for x in a_goals.split(',')],
-                "away_last_games_goals_conceded": [int(x) for x in a_conc.split(',')],
+                "home_last_games_goals_scored": nums[0:5],
+                "home_last_games_goals_conceded": nums[5:10],
+                "away_last_games_goals_scored": nums[10:15],
+                "away_last_games_goals_conceded": nums[15:20],
             }
             st.session_state[f"res_{nome}"] = analyze_match(data)
             st.session_state[f"analise_{nome}"] = True
-        except: st.error("Erro nos dados! Use apenas números separados por vírgula.")
+        else:
+            st.error("Por favor, cole 20 números separados por vírgula!")
 
-    # Verificação de segurança adicionada aqui
-    if st.session_state.get(f"analise_{nome}", False) and f"res_{nome}" in st.session_state:
+    if st.session_state.get(f"analise_{nome}", False):
         res = st.session_state[f"res_{nome}"]
-        st.write("### 📊 Resultado Estatístico")
+        st.write("### 📊 Resumo Final")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
         
         melhor = max(res, key=res.get)
-        st.success(f"🎯 Sugestão: {melhor}")
+        st.success(f"🎯 Aposta Recomendada: {melhor}")
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            res_str = "\n".join([f"{k}: {v}%" for k, v in res.items()])
-            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n{res_str}\n⏰ {horario}"
+            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {melhor}\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
-
-        mid = st.session_state.get(f"mid_{nome}")
-        if mid:
-            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n⏰ {horario}"
-            c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
-            if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
 # Função Jogo C (Intacta)
 def jogo_c_escanteios():
@@ -105,13 +94,9 @@ def jogo_c_escanteios():
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
     if st.session_state.get("analise_c", False):
-        st.write("### 📊 Gráfico de Escanteios FT")
         st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
-        linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_c")
-        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            st.session_state["mid_c"] = telegram(f"🚨 Escanteio: {linha}")
+        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"): telegram("Alerta C")
 
-# Layout
 col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
