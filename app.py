@@ -5,7 +5,6 @@ import re
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
 
-# Suas credenciais diretas
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
@@ -38,6 +37,8 @@ def renderizar_bloco(titulo):
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
+    prog = st.text_input("Prognóstico", key=f"pr_{titulo}")
+    prob = st.text_input("Probabilidade", key=f"pb_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
     pm = st.text_input("Momento", key=f"pm_{titulo}")
     pht = st.text_input("HT", key=f"pht_{titulo}")
@@ -50,18 +51,12 @@ def renderizar_bloco(titulo):
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
         
-        # Gráficos (Barras de Progresso)
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
-        st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
-        st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
-        # Mercados Fortes
         st.write("🔥 **Mercados Fortes:**")
         if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
         if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
-        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
-        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
         tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
         
@@ -69,28 +64,26 @@ def renderizar_bloco(titulo):
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
                f"🎯 Mercado: {tipo}\n"
-               f"⏰ Horário: {hora}")
+               f"💥 Prognóstico: {prog}\n"
+               f"📈 Probabilidade: {prob}\n"
+               f"⏰ Horário: {hora}\n\n"
+               f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
         
         st.info(msg)
         
         if st.button("🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}"):
-            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
             payload = {"chat_id": CHAT_ID, "text": msg}
-            res = requests.post(url, data=payload).json()
-            
+            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data=payload).json()
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                 st.session_state[f"msg_{titulo}"] = msg
-                st.success("Enviado com sucesso!")
-            else:
-                st.error(f"Erro: {res.get('description')}")
+                st.success("Enviado!")
 
     if f"id_{titulo}" in st.session_state:
-        def at(s, pl):
-            url = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-            new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"
+        def at(status, info):
+            new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {info}\n\n🔄 {status}"
             payload = {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text}
-            requests.post(url, data=payload)
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data=payload)
         
         c1, c2, c3, c4 = st.columns(4)
         if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
