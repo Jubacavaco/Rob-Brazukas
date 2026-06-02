@@ -19,6 +19,7 @@ def telegram(msg, msg_id=None):
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
+    # Campos obrigatórios restaurados
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
@@ -27,15 +28,16 @@ def jogo_normal(nome):
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("Placar HT (ex: 0x0)", key=f"ht_{nome}")
     ft = st.text_input("Placar FT (ex: 1x2)", key=f"ft_{nome}")
-    st.text_area("Lista de Análise", key=f"lista_{nome}")
+    lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
 
-    if st.session_state.get(f"analise_{nome}"):
+    # Renderização segura
+    if st.session_state.get(f"analise_{nome}", False):
         st.write("### 📊 Resumo Final")
-        # Criando DataFrame para melhor visualização com porcentagem
-        dados = pd.DataFrame({'Probabilidade (%)': [85, 60, 75, 40]}, index=["O 1.5", "O 2.5", "BTTS", "LTD"])
+        # Gráfico fino
+        dados = pd.DataFrame({'%': [85, 60, 75, 40]}, index=["O 1.5", "O 2.5", "BTTS", "LTD"])
         st.bar_chart(dados, height=200)
         
         col_m, col_p = st.columns(2)
@@ -55,7 +57,6 @@ def jogo_normal(nome):
         if mid:
             base = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
             c1, c2 = st.columns(2)
-            # Mensagens ajustadas sem parênteses
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
@@ -63,4 +64,4 @@ def jogo_normal(nome):
 
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
-    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_c")
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key
