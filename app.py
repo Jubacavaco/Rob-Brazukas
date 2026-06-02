@@ -2,13 +2,14 @@ import streamlit as st
 import requests
 import re
 
-# Configuração da página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
 
-# Pegando chaves de segurança
-TOKEN = st.secrets.get("TOKEN", "")
-CHAT_ID = st.secrets.get("CHAT_ID", "")
+# Suas credenciais diretas
+TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
+CHAT_ID = "-1003925163611"
+SUPABASE_URL = "https://levzsvuikgqfnosykigi.supabase.co"
+SUPABASE_KEY = "sb_publishable_esm8GzVdsIrPSjfcAkcX8Q_0NYasNBn"
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b\d+\b', texto)
@@ -52,16 +53,8 @@ def renderizar_bloco(titulo):
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
-        st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
-        st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
-        st.write("🔥 **Mercados Fortes:**")
-        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
-        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
-        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
-        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
-        
-        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
+        tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
         
         msg = (f"🚨 Alerta de Entrada 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
@@ -75,12 +68,13 @@ def renderizar_bloco(titulo):
             url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
             payload = {"chat_id": CHAT_ID, "text": msg}
             res = requests.post(url, data=payload).json()
+            
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                 st.session_state[f"msg_{titulo}"] = msg
                 st.success("Enviado com sucesso!")
             else:
-                st.error(f"Erro: {res.get('description')}")
+                st.error(f"Erro do Telegram: {res.get('description')}")
 
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
@@ -95,7 +89,6 @@ def renderizar_bloco(titulo):
         if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
         if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
 
-# Renderizar colunas finais
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
