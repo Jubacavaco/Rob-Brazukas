@@ -8,16 +8,22 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-def renderizar_grafico(dados):
-    labels, valores = list(dados.keys()), list(dados.values())
+def renderizar_grafico(probabilidade):
+    # Novo modelo: Gráfico de Rosca (Doughnut)
     components.html(f"""
     <div style="height:200px;"><canvas id="chart"></canvas></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     new Chart(document.getElementById('chart'), {{
-        type: 'bar',
-        data: {{ labels: {labels}, datasets: [{{ label: 'Probabilidade (%)', data: {valores}, backgroundColor: '#ef4444' }}] }},
-        options: {{ responsive: true, maintainAspectRatio: false, scales: {{ y: {{ max: 100, beginAtZero: true }} }} }}
+        type: 'doughnut',
+        data: {{
+            labels: ['Probabilidade', 'Restante'],
+            datasets: [{{
+                data: [{probabilidade}, {100 - probabilidade}],
+                backgroundColor: ['#ef4444', '#e2e8f0']
+            }}]
+        }},
+        options: {{ responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }} }}
     }});
     </script>
     """, height=220)
@@ -40,8 +46,8 @@ def jogo_normal(nome):
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
     lista = st.text_area("Lista", key=f"lista_{nome}")
     
-    # O mercado selecionado será o prognóstico
-    mercado = st.selectbox("Mercado (Prognóstico)", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
+    # Novo Seletor de Mercado
+    mercado = st.selectbox("Mercado", ["Match Odds", "Gols"], key=f"merc_{nome}")
     prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
@@ -49,19 +55,14 @@ def jogo_normal(nome):
             "camp": camp, "casa": casa, "vis": vis, "hor": horario, 
             "ht": ht, "ft": ft, "merc": mercado, "prob": prob
         }
-        st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "AMBOS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
         st.success("Análise feita!")
 
     d = st.session_state.get(f"d_{nome}")
-    p = st.session_state.get(f"p_{nome}")
-    
-    if d and p:
-        # Exibe o prognóstico escolhido em destaque visual no site
+    if d:
         st.info(f"🎯 **Prognóstico (Mercado):** {d.get('merc')}")
-        renderizar_grafico(p)
+        renderizar_grafico(d.get('prob')) # Novo gráfico de rosca
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            # A mensagem usa o mercado selecionado no selectbox
             msg = f"""🚨 Alerta de Cantos 🚨
 
 🏆 Campeonato: {d.get('camp')}
