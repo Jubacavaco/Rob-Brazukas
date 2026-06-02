@@ -25,15 +25,13 @@ def renderizar_grafico(data, labels):
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     
-    # Todos os campos restaurados
+    # 1. Inputs (sempre renderizados)
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     
     if titulo == "JOGO_D":
         hora = st.text_input("Horário", key=f"h_{titulo}")
-        mt = st.number_input("Média Time", key=f"mt_{titulo}")
-        ml = st.number_input("Média Liga", key=f"ml_{titulo}")
         cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
         cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
         ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
@@ -42,37 +40,33 @@ def renderizar_bloco(titulo):
         if st.button("📊 ANALISAR JOGO D", key=f"an_{titulo}"):
             st.session_state[f"ativo_{titulo}"] = True
             st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "ou": ou, "ent": ent, "cc": cc, "cv": cv}
-            
     else:
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
-        prob = st.text_input("Probabilidade", key=f"pb_{titulo}")
+        prob = st.text_input("Probabilidade (%)", key=f"pb_{titulo}")
         if st.button("📊 ANALISAR", key=f"an_{titulo}"):
             st.session_state[f"ativo_{titulo}"] = True
             st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "prob": prob}
 
-    # Exibição dos resultados e botões (mantém o que foi preenchido)
+    # 2. Exibição segura com verificação de existência
     if st.session_state.get(f"ativo_{titulo}"):
-        d = st.session_state[f"dados_{titulo}"]
+        d = st.session_state.get(f"dados_{titulo}", {})
+        
         if titulo == "JOGO_D":
-            st.write(f"💡 **Recomendação:** {d['ou']} {d['ent']}")
+            st.write(f"💡 **Recomendação:** {d.get('ou', 'N/A')} {d.get('ent', 'N/A')}")
             renderizar_grafico([82, 73, 61, 49], ['7.5', '8.5', '9.5', '10.5'])
-            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
-                msg = f"🏆 {d['camp']}\n⚔️ {d['casa']} x {d['vis']}\n🎯 Mercado: {d['ou']} {d['ent']}\n🕒 {d['hora']}{RODAPE}"
-                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
             
-            if f"id_{titulo}" in st.session_state:
-                c1, c2, c3, c4 = st.columns(4)
-                if c1.button("MOMENTO", key=f"m_{titulo}"): st.write("Enviando momento...")
-                if c2.button("HT", key=f"ht_{titulo}"): st.write("Enviando Green HT...")
-                if c3.button("HT 2", key=f"ht2_{titulo}"): st.write("Enviando Red HT...")
-                if c4.button("FINAL", key=f"fin_{titulo}"): st.write("Enviando Green Final...")
+            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
+                msg = f"🏆 {d.get('camp', '')}\n⚔️ {d.get('casa', '')} x {d.get('vis', '')}\n🎯 Mercado: {d.get('ou', '')} {d.get('ent', '')}\n🕒 {d.get('hora', '')}{RODAPE}"
+                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
+                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+        
         else:
             st.write(f"🔥 **Mercado Pegando Fogo: {d.get('prob', '90')}%**")
             renderizar_grafico([90, 85, 70], ['O1.5', 'O2.5', 'BTTS'])
             if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
-                st.write("Alerta enviado!")
+                st.info("Alerta enviado ao Telegram!")
 
+# Colunas principais
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
