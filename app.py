@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
@@ -8,11 +7,9 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-# Função para enviar ou editar a mensagem no Telegram mantendo o estilo
 def enviar_ou_editar(nome, msg):
     url_base = f"https://api.telegram.org/bot{TOKEN}"
     payload = {"chat_id": CHAT_ID, "text": msg}
-    
     if f"msg_id_{nome}" in st.session_state:
         payload["message_id"] = st.session_state[f"msg_id_{nome}"]
         requests.post(f"{url_base}/editMessageText", json=payload)
@@ -20,9 +17,6 @@ def enviar_ou_editar(nome, msg):
         resp = requests.post(f"{url_base}/sendMessage", json=payload).json()
         if resp.get("ok"):
             st.session_state[f"msg_id_{nome}"] = resp["result"]["message_id"]
-
-def calcular_probabilidades(lista):
-    return {"BTTS": 61, "O1.5": 78, "O2.5": 52, "LTD": 70, "Casa": 65, "Vis": 15}
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
@@ -40,13 +34,13 @@ def jogo_normal(nome):
         btn_enviar = st.form_submit_button("🚀 ENVIAR ALERTA")
 
     if btn_analisar:
+        # Aqui o sistema processa a lista
         st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
+        st.success(f"Análise de {nome} concluída!")
         st.rerun()
 
-    # Exibição dos botões de controle após envio
     if f"dados_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
-        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): 
@@ -59,7 +53,6 @@ def jogo_normal(nome):
             if st.button("❌ RED", key=f"red_{nome}"): 
                 enviar_ou_editar(nome, f"❌ RED!\n{d['casa']} x {d['vis']}\nPlacar Final: {d['ft']}")
 
-    # Envio inicial no formato solicitado
     if btn_enviar and f"dados_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
         msg = f"""🚨 Alerta de Cantos 🚨
@@ -75,7 +68,16 @@ def jogo_normal(nome):
 ⚠️ Não há garantias de lucro."""
         enviar_ou_editar(nome, msg)
 
-col1, col2, col3 = st.columns(3)
+def jogo_d():
+    st.subheader("🏟️ JOGO_D (Escanteios)")
+    with st.form("JOGO_D"):
+        linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
+        btn_action = st.form_submit_button("ENVIAR AÇÃO")
+    if btn_action:
+        requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D\nLinha: {linha}"})
+
+col1, col2, col3, col4 = st.columns(4)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_normal("JOGO_C")
+with col4: jogo_d()
