@@ -57,7 +57,6 @@ def salvar_analise(
 def calcular_probabilidade(texto):
 
     numeros = re.findall(r'\b\d+\b', texto)
-
     gols = [int(n) for n in numeros if int(n) <= 10]
 
     if len(gols) < 2:
@@ -200,53 +199,41 @@ def renderizar_bloco(titulo):
         st.info(msg)
 
         # =========================
-        # TELEGRAM + SUPABASE
+        # TELEGRAM (CORRIGIDO 404)
         # =========================
         if st.button("🚀 ENVIAR", key=f"e_{titulo}"):
 
-            try:
+            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-                res = requests.post(
-                    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                    data={
-                        "chat_id": CHAT_ID,
-                        "text": msg
-                    }
-                )
+            res = requests.post(
+                url,
+                data={"chat_id": CHAT_ID, "text": msg}
+            )
 
-                st.write(res.text)
+            st.write(res.text)
 
-                if res.status_code == 200:
+            if res.status_code == 200:
 
-                    resposta = res.json()
+                resposta = res.json()
 
-                    if resposta.get("ok"):
+                if resposta.get("ok"):
 
-                        msg_id = resposta["result"]["message_id"]
+                    msg_id = resposta["result"]["message_id"]
 
-                        salvar_analise(
-                            jogo=f"{casa} x {vis}",
-                            campeonato=camp,
-                            mercado=tipo,
-                            probabilidade=str(prob),
-                            horario=hora,
-                            lista_jogos=lista,
-                            message_id=msg_id,
-                            status="ENVIADO",
-                            placar_ht=pht,
-                            placar_final=pf
-                        )
+                    salvar_analise(
+                        jogo=f"{casa} x {vis}",
+                        campeonato=camp,
+                        mercado=tipo,
+                        probabilidade=str(prob),
+                        horario=hora,
+                        lista_jogos=lista,
+                        message_id=msg_id,
+                        status="ENVIADO",
+                        placar_ht=pht,
+                        placar_final=pf
+                    )
 
-                        st.success("Enviado e salvo 🔥")
-
-                    else:
-                        st.error("Telegram retornou erro")
-
-                else:
-                    st.error(f"Erro HTTP: {res.status_code}")
-
-            except Exception as e:
-                st.error(f"Erro: {e}")
+                    st.success("Enviado e salvo 🔥")
 
 # =========================
 # HISTÓRICO NA TELA
@@ -270,6 +257,30 @@ if hist:
 
 else:
     st.info("Sem histórico ainda.")
+
+# =========================
+# 📊 GRÁFICO (GREEN vs RED)
+# =========================
+st.write("## 📊 Performance")
+
+greens = 0
+reds = 0
+
+for i in hist:
+
+    status = (i.get("status") or "").lower()
+
+    if "green" in status:
+        greens += 1
+    elif "red" in status:
+        reds += 1
+
+if (greens + reds) > 0:
+
+    st.bar_chart({
+        "GREEN": greens,
+        "RED": reds
+    })
 
 # =========================
 # 4 JOGOS
