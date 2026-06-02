@@ -20,15 +20,18 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-def processar_calculo(lista_str):
-    nums = [int(n) for n in lista_str.replace(' ', '').replace(',', ' ').split() if n.isdigit()]
+# Função de cálculo isolada
+def calcular_probabilidades(lista_str):
+    nums = [int(n) for n in lista_str.replace(',', ' ').split() if n.isdigit()]
     if len(nums) < 20: nums = [1] * 20 
     h_s, h_c = nums[0:5], nums[5:10]
     a_s, a_c = nums[10:15], nums[15:20]
+    
     avg = lambda lst: sum(lst) / len(lst) if lst else 0
     exp_h = (avg(h_s) + avg(a_c)) / 2
     exp_a = (avg(a_s) + avg(h_c)) / 2
     total = exp_h + exp_a
+    
     return {
         "Over 1.5 FT": round(min(95, max(10, total * 35)), 1),
         "Over 2.5 FT": round(min(90, max(5, (total - 1.2) * 40)), 1),
@@ -57,7 +60,8 @@ def jogo_normal(nome):
     lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        st.session_state[f"res_{nome}"] = processar_calculo(lista)
+        # Força o recálculo baseado estritamente na lista deste widget
+        st.session_state[f"res_{nome}"] = calcular_probabilidades(lista)
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}"):
@@ -81,6 +85,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
+# --- JOGO C INTACTO ---
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -96,6 +101,7 @@ def jogo_c_escanteios():
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
     if st.session_state.get("analise_c", False):
+        st.write("### 📊 Gráfico de Escanteios FT")
         st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
         linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_c")
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
