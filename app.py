@@ -50,7 +50,6 @@ def jogo_normal(nome):
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
-    
     mercado = st.selectbox("Mercado", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"mercado_{nome}")
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
@@ -66,8 +65,6 @@ def jogo_normal(nome):
         res = st.session_state.get(f"res_{nome}")
         st.write("### 📊 Resumo")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
-        
-        # Aposta Recomendada de volta
         reco = definir_aposta(res)
         st.success(f"🎯 Aposta Recomendada: {reco}")
         
@@ -100,6 +97,10 @@ def jogo_c_escanteios():
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
     
     if st.session_state.get("analise_c", False):
+        st.write("### 📊 Probabilidade Escanteios")
+        df_esc = pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"])
+        st.bar_chart(df_esc)
+        
         st.write(f"**Total Atual:** {e_casa_c + e_vis_c}")
         linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
         
