@@ -2,11 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 
-# Configuração da página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Pro")
 
-# Configurações Globais
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 RODAPE = "\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
@@ -52,7 +50,8 @@ def jogo_normal(nome):
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
-    mercado = st.selectbox("Mercado", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"mercado_{nome}")
+    # Caixa adicionada para escolha
+    mercado = st.selectbox("Mercado", ["Match Odds", "Gols"], key=f"mercado_{nome}")
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
@@ -71,12 +70,12 @@ def jogo_normal(nome):
         st.success(f"🎯 Aposta Recomendada: {reco}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
-            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
+            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
@@ -89,7 +88,9 @@ def jogo_c_escanteios():
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
     horario_c = st.text_input("Horário", key="hor_c")
-    mercado_c = st.text_input("Tipo de Mercado", key="mercado_c")
+    # Caixas restauradas conforme pedido
+    med_casa_vis = st.number_input("Média Casa + Visitante", step=0.1, key="med_casa_vis_c")
+    med_liga = st.number_input("Média da Liga", step=0.1, key="med_liga_c")
     e_casa_c = st.number_input("Escanteios Casa (Atual)", step=1, key="e_casa_c")
     e_vis_c = st.number_input("Escanteios Vis (Atual)", step=1, key="e_vis_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
@@ -103,12 +104,12 @@ def jogo_c_escanteios():
         linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
         
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            msg = f"🚨 Alerta {mercado_c} 🚨\n\n🏆 {camp_c}\n⏰ {horario_c}\n\n📊 Escanteios Casa: {e_casa_c}\n📊 Escanteios Vis: {e_vis_c}\n📈 Total: {e_casa_c + e_vis_c}\n🎯 Linha: {linha}"
+            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n⏰ {horario_c}\n\n📊 Escanteios Casa: {e_casa_c}\n📊 Escanteios Vis: {e_vis_c}\n📈 Total: {e_casa_c + e_vis_c}\n🎯 Linha: {linha}"
             st.session_state["mid_c"] = telegram(msg)
         
         mid = st.session_state.get("mid_c")
         if mid:
-            base = f"🚨 Alerta {mercado_c} 🚨\n\n🏆 {camp_c}\n⏰ {horario_c}\n\n📊 Escanteios Casa: {e_casa_c}\n📊 Escanteios Vis: {e_vis_c}\n📈 Total: {e_casa_c + e_vis_c}\n🎯 Linha: {linha}"
+            base = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n⏰ {horario_c}\n\n📊 Escanteios Casa: {e_casa_c}\n📊 Escanteios Vis: {e_vis_c}\n📈 Total: {e_casa_c + e_vis_c}\n🎯 Linha: {linha}"
             c1, c2 = st.columns(2)
             if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
