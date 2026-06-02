@@ -21,7 +21,7 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# SUA LÓGICA INTEGRADA
+# Lógica Estatística Integrada
 def analyze_match(data):
     def avg(lst): return sum(lst) / len(lst) if lst else 0
     home_attack = avg(data["home_last_games_goals_scored"])
@@ -52,7 +52,6 @@ def jogo_normal(nome):
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
     
     st.write("---")
-    st.write("Insira os dados para cálculo:")
     h_goals = st.text_input("Casa: Gols Feitos (ex: 2,0,1,0,4)", key=f"h_g_{nome}")
     h_conc = st.text_input("Casa: Gols Sofridos (ex: 4,2,7,1,1)", key=f"h_c_{nome}")
     a_goals = st.text_input("Visitante: Gols Feitos (ex: 3,2,2,2,0)", key=f"a_g_{nome}")
@@ -66,12 +65,12 @@ def jogo_normal(nome):
                 "away_last_games_goals_scored": [int(x) for x in a_goals.split(',')],
                 "away_last_games_goals_conceded": [int(x) for x in a_conc.split(',')],
             }
-            res = analyze_match(data)
-            st.session_state[f"res_{nome}"] = res
+            st.session_state[f"res_{nome}"] = analyze_match(data)
             st.session_state[f"analise_{nome}"] = True
         except: st.error("Erro nos dados! Use apenas números separados por vírgula.")
 
-    if st.session_state.get(f"analise_{nome}", False):
+    # Verificação de segurança adicionada aqui
+    if st.session_state.get(f"analise_{nome}", False) and f"res_{nome}" in st.session_state:
         res = st.session_state[f"res_{nome}"]
         st.write("### 📊 Resultado Estatístico")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
@@ -80,7 +79,8 @@ def jogo_normal(nome):
         st.success(f"🎯 Sugestão: {melhor}")
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n{res}\n⏰ {horario}"
+            res_str = "\n".join([f"{k}: {v}%" for k, v in res.items()])
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n{res_str}\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
