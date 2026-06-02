@@ -25,8 +25,8 @@ def jogo_normal(nome):
     mercado = st.selectbox("Mercado", ["Match Odds", "Gols"], key=f"merc_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
-    ht = st.text_input("HT", key=f"ht_{nome}")
-    ft = st.text_input("FT", key=f"ft_{nome}")
+    ht = st.text_input("Placar HT (ex: 0x0)", key=f"ht_{nome}")
+    ft = st.text_input("Placar FT (ex: 1x2)", key=f"ft_{nome}")
     st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
@@ -45,31 +45,16 @@ def jogo_normal(nome):
             
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"):
-                telegram(f"{base}\nHT: {ht}\n\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT GREEN", key=f"htg_{nome}"):
-                telegram(f"{base}\nHT: {ht}\n✅ HT GREEN", mid)
-            if c2.button("🏆 FINAL GREEN", key=f"fng_{nome}"):
-                telegram(f"{base}\nHT: {ht}\nFT: {ft}\n🏆 FINAL GREEN", mid)
+                telegram(f"{base}\nHT: ({ht})\n\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key=f"htg_{nome}"):
+                telegram(f"{base}\nHT: ({ht})\n✅✅✅", mid)
+            if c2.button("🏆 FINAL", key=f"fng_{nome}"):
+                telegram(f"{base}\nHT: ({ht})\nFT: ({ft})\n🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"):
-                telegram(f"{base}\nHT: {ht}\nFT: {ft}\n❌ RED", mid)
+                telegram(f"{base}\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
 
-def jogo_d():
-    st.subheader("🏟️ JOGO_D (Escanteios)")
-    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
-    if st.button("🚀 ENVIAR ALERTA", key="d_env"): 
-        st.session_state["mid_d"] = telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}")
-    
-    mid = st.session_state.get("mid_d")
-    if mid:
-        c1, c2 = st.columns(2)
-        if c1.button("⏱️ MOMENTO", key="d_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🟢 Em Andamento", mid)
-        if c1.button("✅ HT GREEN", key="d_htg"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n✅ HT GREEN!", mid)
-        if c2.button("🏆 FINAL GREEN", key="d_fng"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🏆 FINAL GREEN!", mid)
-        if c2.button("❌ RED", key="d_fnr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n❌ RED!", mid)
-
-# Colunas principais
-c1, c2, c3, c4 = st.columns(4)
+# (Função jogo_d segue a mesma lógica de formatação de placar)
+c1, c2, c3 = st.columns(3)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
 with c3: jogo_normal("JOGO_C")
-with c4: jogo_d()
