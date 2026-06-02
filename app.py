@@ -36,8 +36,12 @@ def jogo_normal(nome):
         visitante = st.text_input("Visitante")
         horario = st.text_input("Horário")
         lista = st.text_area("Lista de Jogos")
-        # Este é o campo onde VOCÊ escolhe o que enviar
+        
+        # Campos definidos conforme seu pedido
         mercado_envio = st.selectbox("Qual mercado enviar?", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"])
+        
+        # Caixa de texto para definir a % exata
+        prob_manual = st.number_input("Definir % da Probabilidade", min_value=0, max_value=100, value=70)
         
         btn_analisar = st.form_submit_button("📊 ANALISAR")
         btn_enviar = st.form_submit_button("🚀 ENVIAR ESCOLHIDO")
@@ -50,12 +54,9 @@ def jogo_normal(nome):
     if f"probs_{nome}" in st.session_state:
         probs = st.session_state[f"probs_{nome}"]
         d = st.session_state[f"dados_{nome}"]
-        
-        # Identifica a aposta recomendada (maior valor)
         recomendado = max(probs, key=probs.get)
         
-        st.info(f"💡 **Aposta Recomendada pelo sistema:** {recomendado} ({probs[recomendado]}%)")
-        
+        st.info(f"💡 **Recomendado:** {recomendado} ({probs[recomendado]}%)")
         cols = st.columns(3)
         for i, (m, p) in enumerate(probs.items()):
             cols[i % 3].write(f"{'🔥' if p >= 70 else '⚠️'} **{m}**: {p}%")
@@ -63,11 +64,10 @@ def jogo_normal(nome):
 
     if btn_enviar and f"probs_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
-        probs = st.session_state[f"probs_{nome}"]
-        # Envia o mercado que você selecionou no selectbox
-        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado Escolhido: {mercado_envio}\n📈 Probabilidade: {probs.get(mercado_envio, 0)}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade."
+        # Envia a % que você digitou na caixa prob_manual
+        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado Escolhido: {mercado_envio}\n📈 Probabilidade: {prob_manual}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade."
         enviar_telegram(msg)
-        st.success(f"Enviado {mercado_envio} com sucesso!")
+        st.success(f"Enviado {mercado_envio} com {prob_manual}%!")
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
@@ -81,3 +81,4 @@ with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_normal("JOGO_C")
 with col4: jogo_d()
+    
