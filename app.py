@@ -7,9 +7,6 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-def enviar_telegram(msg):
-    requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": msg})
-
 def enviar_ou_editar(nome, msg):
     url_base = f"https://api.telegram.org/bot{TOKEN}"
     payload = {"chat_id": CHAT_ID, "text": msg}
@@ -23,58 +20,53 @@ def enviar_ou_editar(nome, msg):
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
-    with st.form(key=f"form_{nome}"):
-        camp = st.text_input("Campeonato", key=f"camp_{nome}")
-        casa = st.text_input("Casa", key=f"casa_{nome}")
-        visitante = st.text_input("Visitante", key=f"vis_{nome}")
-        horario = st.text_input("Horário", key=f"hor_{nome}")
-        ht = st.text_input("Placar HT", key=f"ht_{nome}")
-        ft = st.text_input("Placar FT", key=f"ft_{nome}")
-        lista = st.text_area("Lista de Jogos", key=f"lista_{nome}")
-        mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
-        prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
-        btn_analisar = st.form_submit_button("📊 ANALISAR")
-        btn_enviar = st.form_submit_button("🚀 ENVIAR ALERTA")
+    
+    # Inputs (Sem form, para reagir instantaneamente)
+    camp = st.text_input("Campeonato", key=f"camp_{nome}")
+    casa = st.text_input("Casa", key=f"casa_{nome}")
+    visitante = st.text_input("Visitante", key=f"vis_{nome}")
+    horario = st.text_input("Horário", key=f"hor_{nome}")
+    ht = st.text_input("Placar HT", key=f"ht_{nome}")
+    ft = st.text_input("Placar FT", key=f"ft_{nome}")
+    lista = st.text_area("Lista de Jogos", key=f"lista_{nome}")
+    mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
+    prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
 
-    if btn_analisar:
-        st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
-        st.success(f"Análise de {nome} concluída!")
-        st.rerun()
+    # Botão de Análise (Agora funciona pois não está dentro de um form)
+    if st.button("📊 ANALISAR", key=f"btn_ana_{nome}"):
+        st.session_state[f"dados_{nome}"] = {
+            "camp": camp, "casa": casa, "vis": visitante, 
+            "horario": horario, "ht": ht, "ft": ft, 
+            "merc": mercado, "prob": prob
+        }
+        st.success("Análise concluída!")
 
+    # Botão de Envio (Mantido separado)
+    if st.button("🚀 ENVIAR ALERTA", key=f"btn_env_{nome}") and f"dados_{nome}" in st.session_state:
+        d = st.session_state[f"dados_{nome}"]
+        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {d['merc']}\n💥 Prognóstico: Analisado\n📈 Probabilidade: {d['prob']}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
+        enviar_ou_editar(nome, msg)
+        st.success("Enviado!")
+
+    # Botões de Ação
     if f"dados_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): 
-                enviar_ou_editar(nome, f"⏱️ MOMENTO AO VIVO\n{d['casa']} x {d['vis']}\nPlacar: HT {d['ht']} | FT {d['ft']}")
-            if st.button("✅ HT GREEN", key=f"htg_{nome}"): 
-                enviar_ou_editar(nome, f"✅ HT GREEN!\n{d['casa']} x {d['vis']}\nPlacar HT: {d['ht']}")
+            if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): enviar_ou_editar(nome, f"⏱️ AO VIVO\n{d['casa']} x {d['vis']}\nHT: {d['ht']} | FT: {d['ft']}")
+            if st.button("✅ HT GREEN", key=f"htg_{nome}"): enviar_ou_editar(nome, f"✅ HT GREEN!\n{d['casa']} x {d['vis']}\nHT: {d['ht']}")
         with col2:
-            if st.button("✅ FINAL GREEN", key=f"fng_{nome}"): 
-                enviar_ou_editar(nome, f"🏆 FINAL GREEN!\n{d['casa']} x {d['vis']}\nPlacar Final: {d['ft']}")
-            if st.button("❌ RED", key=f"red_{nome}"): 
-                enviar_ou_editar(nome, f"❌ RED!\n{d['casa']} x {d['vis']}\nPlacar Final: {d['ft']}")
-
-    if btn_enviar and f"dados_{nome}" in st.session_state:
-        d = st.session_state[f"dados_{nome}"]
-        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {d['merc']}\n💥 Prognóstico: Analisado\n📈 Probabilidade: {d['prob']}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
-        enviar_ou_editar(nome, msg)
+            if st.button("✅ FINAL GREEN", key=f"fng_{nome}"): enviar_ou_editar(nome, f"🏆 FINAL GREEN!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
+            if st.button("❌ RED", key=f"red_{nome}"): enviar_ou_editar(nome, f"❌ RED!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
-    with st.form("JOGO_D"):
-        linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
-        btn_htg = st.form_submit_button("HT GREEN")
-        btn_htr = st.form_submit_button("HT RED")
-        btn_mom = st.form_submit_button("MOMENTO")
-        btn_fng = st.form_submit_button("FINAL GREEN")
-        btn_fnr = st.form_submit_button("FINAL RED")
-    
-    if btn_htg: enviar_telegram(f"JOGO D\nHT GREEN\nLinha: {linha}")
-    if btn_htr: enviar_telegram(f"JOGO D\nHT RED\nLinha: {linha}")
-    if btn_mom: enviar_telegram(f"JOGO D\nMOMENTO\nLinha: {linha}")
-    if btn_fng: enviar_telegram(f"JOGO D\nFINAL GREEN\nLinha: {linha}")
-    if btn_fnr: enviar_telegram(f"JOGO D\nFINAL RED\nLinha: {linha}")
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
+    if st.button("HT GREEN", key="d_htg"): requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D: HT GREEN\nLinha: {linha}"})
+    if st.button("HT RED", key="d_htr"): requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D: HT RED\nLinha: {linha}"})
+    if st.button("MOMENTO", key="d_mom"): requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D: MOMENTO\nLinha: {linha}"})
+    if st.button("FINAL GREEN", key="d_fng"): requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D: FINAL GREEN\nLinha: {linha}"})
+    if st.button("FINAL RED", key="d_fnr"): requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": f"JOGO D: FINAL RED\nLinha: {linha}"})
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: jogo_normal("JOGO_A")
