@@ -7,8 +7,8 @@ from supabase import create_client
 # SUPABASE
 # =========================
 supabase = create_client(
-    st.secrets["SUPABASE_URL"],
-    st.secrets["SUPABASE_KEY"]
+    st.secrets.get("SUPABASE_URL", ""),
+    st.secrets.get("SUPABASE_KEY", "")
 )
 
 # =========================
@@ -199,44 +199,47 @@ def renderizar_bloco(titulo):
         st.info(msg)
 
         # =========================
-        # TELEGRAM (CORRIGIDO 404)
+        # TELEGRAM (CORRIGIDO + BLINDADO)
         # =========================
         if st.button("🚀 ENVIAR", key=f"e_{titulo}"):
 
-            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+            if not TOKEN or not CHAT_ID:
+                st.error("Token ou Chat ID vazio no Secrets")
+            else:
+                url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-            res = requests.post(
-                url,
-                data={"chat_id": CHAT_ID, "text": msg}
-            )
+                res = requests.post(
+                    url,
+                    data={"chat_id": CHAT_ID, "text": msg}
+                )
 
-            st.write(res.text)
+                st.write(res.text)
 
-            if res.status_code == 200:
+                if res.status_code == 200:
 
-                resposta = res.json()
+                    resposta = res.json()
 
-                if resposta.get("ok"):
+                    if resposta.get("ok"):
 
-                    msg_id = resposta["result"]["message_id"]
+                        msg_id = resposta["result"]["message_id"]
 
-                    salvar_analise(
-                        jogo=f"{casa} x {vis}",
-                        campeonato=camp,
-                        mercado=tipo,
-                        probabilidade=str(prob),
-                        horario=hora,
-                        lista_jogos=lista,
-                        message_id=msg_id,
-                        status="ENVIADO",
-                        placar_ht=pht,
-                        placar_final=pf
-                    )
+                        salvar_analise(
+                            jogo=f"{casa} x {vis}",
+                            campeonato=camp,
+                            mercado=tipo,
+                            probabilidade=str(prob),
+                            horario=hora,
+                            lista_jogos=lista,
+                            message_id=msg_id,
+                            status="ENVIADO",
+                            placar_ht=pht,
+                            placar_final=pf
+                        )
 
-                    st.success("Enviado e salvo 🔥")
+                        st.success("Enviado e salvo 🔥")
 
 # =========================
-# HISTÓRICO NA TELA
+# HISTÓRICO
 # =========================
 st.write("## 📊 Histórico Brazukas")
 
@@ -257,30 +260,6 @@ if hist:
 
 else:
     st.info("Sem histórico ainda.")
-
-# =========================
-# 📊 GRÁFICO (GREEN vs RED)
-# =========================
-st.write("## 📊 Performance")
-
-greens = 0
-reds = 0
-
-for i in hist:
-
-    status = (i.get("status") or "").lower()
-
-    if "green" in status:
-        greens += 1
-    elif "red" in status:
-        reds += 1
-
-if (greens + reds) > 0:
-
-    st.bar_chart({
-        "GREEN": greens,
-        "RED": reds
-    })
 
 # =========================
 # 4 JOGOS
