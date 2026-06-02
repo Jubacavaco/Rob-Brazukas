@@ -85,9 +85,7 @@ def renderizar_bloco(titulo):
             msg_id = st.session_state[f"id_{titulo}"]
             msg_base = st.session_state.get(f"msg_base_{titulo}", "")
             
-            # Lógica de atualização conforme sua nova necessidade
             if modo == "MOMENTO":
-                # Botão Momento já marca como Green
                 txt_placar = f"\n⚽ Momento: {pm}"
                 status = "GREEN 🟢✅"
             elif modo == "HT":
@@ -95,7 +93,6 @@ def renderizar_bloco(titulo):
             elif modo == "HT2":
                 txt_placar = f"\n⚽ HT: {pht}"
             elif modo == "FINAL":
-                # Botão Final mostra HT e Final
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
             elif modo == "RED":
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
@@ -108,7 +105,7 @@ def renderizar_bloco(titulo):
 
         c1, c2, c3, c4, c5 = st.columns(5)
         if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("GREEN 🟢✅", "MOMENTO")
-        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("HT FINALIZADO 🟢", "HT")
+        if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("EM ANDAMENTO ⚪", "HT")
         if c3.button("HT 2", key=f"ht2_{titulo}"): atualizar_telegram("EM ANDAMENTO ⚪", "HT2")
         if c4.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
         if c5.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
