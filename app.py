@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Pro")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
