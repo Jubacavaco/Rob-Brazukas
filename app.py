@@ -34,7 +34,6 @@ def jogo_normal(nome):
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    # Reintroduzindo a lista de análise
     st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
@@ -44,6 +43,15 @@ def jogo_normal(nome):
         st.write("### 📊 Resumo Final")
         st.bar_chart(pd.DataFrame({'%': [85, 60, 75, 40]}, index=["O 1.5", "O 2.5", "BTTS", "LTD"]))
         
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write("### 🎯 Mercados Mais Fortes")
+            st.write("✅ Over 1.5 FT — Muito Forte\n🔥 LTD — Forte")
+        with c2:
+            st.write("### 📌 Placares Sugeridos")
+            st.write("• 1x0 | 1x1 | 2x1")
+            st.success("🎯 Aposta Recomendada: Over 1.5 FT")
+
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
@@ -57,7 +65,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios - Mantida intacta)
+# Função Jogo C (Escanteios - Intacta)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
