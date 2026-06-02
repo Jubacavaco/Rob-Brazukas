@@ -9,11 +9,21 @@ TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
 
 # =========================
-# NOVA LÓGICA ESTATÍSTICA
+# LÓGICA ESTATÍSTICA FLASHSCORE
 # =========================
 def calcular_probabilidade(texto):
 
-    linhas = texto.strip().splitlines()
+    numeros = re.findall(r'\b\d+\b', texto)
+
+    gols = []
+
+    for n in numeros:
+
+        valor = int(n)
+
+        # IGNORA DATAS
+        if valor <= 10:
+            gols.append(valor)
 
     over15 = 0
     over25 = 0
@@ -24,53 +34,46 @@ def calcular_probabilidade(texto):
     vitoria_visitante = 0
     empate = 0
 
-    gols_marcados = 0
-    gols_sofridos = 0
-
     total = 0
 
-    for linha in linhas:
+    i = 0
 
-        # PEGA SOMENTE PLACARES REAIS
-        placar = re.search(r'(\d+)\s*[xX\-]\s*(\d+)', linha)
+    while i < len(gols) - 1:
 
-        if placar:
+        g1 = gols[i]
+        g2 = gols[i + 1]
 
-            g1 = int(placar.group(1))
-            g2 = int(placar.group(2))
+        total += 1
 
-            total += 1
+        total_gols = g1 + g2
 
-            gols_marcados += g1
-            gols_sofridos += g2
+        # OVER 1.5
+        if total_gols >= 2:
+            over15 += 1
 
-            total_gols = g1 + g2
+        # OVER 2.5
+        if total_gols >= 3:
+            over25 += 1
 
-            # OVER 1.5
-            if total_gols >= 2:
-                over15 += 1
+        # BTTS
+        if g1 > 0 and g2 > 0:
+            btts += 1
 
-            # OVER 2.5
-            if total_gols >= 3:
-                over25 += 1
+        # LTD
+        if g1 != g2:
+            ltd += 1
 
-            # BTTS
-            if g1 > 0 and g2 > 0:
-                btts += 1
+        # RESULTADOS
+        if g1 > g2:
+            vitoria_casa += 1
 
-            # LTD
-            if g1 != g2:
-                ltd += 1
+        elif g2 > g1:
+            vitoria_visitante += 1
 
-            # RESULTADOS
-            if g1 > g2:
-                vitoria_casa += 1
+        else:
+            empate += 1
 
-            elif g2 > g1:
-                vitoria_visitante += 1
-
-            else:
-                empate += 1
+        i += 2
 
     if total == 0:
         return 50, 50, 0, 0, 0, 0, 0
@@ -85,35 +88,34 @@ def calcular_probabilidade(texto):
     p_visitante = (vitoria_visitante / total) * 100
     p_empate = (empate / total) * 100
 
-    # AJUSTES
-    media_marcados = gols_marcados / total
-    media_sofridos = gols_sofridos / total
+    # AJUSTE INTELIGENTE
+    media_gols = (
+        (p_over15 * 0.4) +
+        (p_over25 * 0.4) +
+        (p_btts * 0.2)
+    ) / 100
 
-    if media_marcados >= 2:
-        p_over15 += 5
-        p_over25 += 5
-
-    if media_sofridos >= 1.5:
-        p_btts += 5
+    p_over15 += media_gols * 10
+    p_over25 += media_gols * 5
 
     # LIMITES
-    p_over15 = min(p_over15, 95)
-    p_over25 = min(p_over25, 90)
-    p_btts = min(p_btts, 85)
-    p_ltd = min(p_ltd, 95)
+    p_over15 = min(round(p_over15, 1), 95)
+    p_over25 = min(round(p_over25, 1), 90)
+    p_btts = min(round(p_btts, 1), 85)
+    p_ltd = min(round(p_ltd, 1), 95)
 
     return (
         round(p_casa, 1),
         round(p_visitante, 1),
         round(p_empate, 1),
-        round(p_over15, 1),
-        round(p_over25, 1),
-        round(p_btts, 1),
-        round(p_ltd, 1)
+        p_over15,
+        p_over25,
+        p_btts,
+        p_ltd
     )
 
 # =========================
-# SUGESTÃO MERCADO
+# SUGESTÃO DE MERCADO
 # =========================
 def obter_sugestao(p15, p25, pbtts, pltd):
 
@@ -133,7 +135,7 @@ def obter_sugestao(p15, p25, pbtts, pltd):
         return "Nenhum mercado recomendado"
 
 # =========================
-# BLOCO JOGO
+# BLOCO DOS JOGOS
 # =========================
 def renderizar_bloco(titulo):
 
@@ -144,7 +146,7 @@ def renderizar_bloco(titulo):
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
 
-    # % MANUAL
+    # PROBABILIDADE MANUAL
     prob_manual = st.text_input(
         "Probabilidade Manual (%)",
         key=f"pr_{titulo}"
@@ -156,10 +158,12 @@ def renderizar_bloco(titulo):
 
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
 
+    # ANALISAR
     if st.button("Analisar", key=f"an_{titulo}"):
 
         st.session_state[f"probs_{titulo}"] = calcular_probabilidade(lista)
 
+    # RESULTADOS
     if f"probs_{titulo}" in st.session_state:
 
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
@@ -198,7 +202,7 @@ def renderizar_bloco(titulo):
             key=f"sel_{titulo}"
         )
 
-        # PROBABILIDADE MANUAL
+        # % MANUAL
         prob = prob_manual if prob_manual else "0"
 
         # MSG TELEGRAM
@@ -234,7 +238,7 @@ def renderizar_bloco(titulo):
         st.markdown(resumo)
 
         # =========================
-        # MERCADOS FORTES
+        # MERCADOS MAIS FORTES
         # =========================
         st.write("## 🎯 Mercados Mais Fortes")
 
@@ -257,7 +261,7 @@ def renderizar_bloco(titulo):
             st.write("🔥 LTD (Sem Empate) — Muito Forte")
 
         # =========================
-        # PLACARES
+        # PLACARES COMPATÍVEIS
         # =========================
         st.write("## 📌 Placares Compatíveis")
 
@@ -299,7 +303,7 @@ def renderizar_bloco(titulo):
                 st.success("Mensagem enviada!")
 
     # =========================
-    # STATUS
+    # STATUS TELEGRAM
     # =========================
     if f"id_{titulo}" in st.session_state:
 
@@ -353,7 +357,7 @@ def renderizar_bloco(titulo):
             atualizar_telegram("RED 🔴❌", "FINAL")
 
 # =========================
-# COLUNAS
+# 4 COLUNAS
 # =========================
 col1, col2, col3, col4 = st.columns(4)
 
