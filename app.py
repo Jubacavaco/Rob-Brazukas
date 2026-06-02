@@ -19,7 +19,6 @@ def telegram(msg, msg_id=None):
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
-    # Campos obrigatórios restaurados
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
@@ -28,15 +27,13 @@ def jogo_normal(nome):
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("Placar HT (ex: 0x0)", key=f"ht_{nome}")
     ft = st.text_input("Placar FT (ex: 1x2)", key=f"ft_{nome}")
-    lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
+    st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
 
-    # Renderização segura
     if st.session_state.get(f"analise_{nome}", False):
         st.write("### 📊 Resumo Final")
-        # Gráfico fino
         dados = pd.DataFrame({'%': [85, 60, 75, 40]}, index=["O 1.5", "O 2.5", "BTTS", "LTD"])
         st.bar_chart(dados, height=200)
         
@@ -64,4 +61,16 @@ def jogo_normal(nome):
 
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
-    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_c")
+    if st.button("🚀 ENVIAR ESCANTEIO", key="c_env"): 
+        st.session_state["mid_c"] = telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}")
+    mid = st.session_state.get("mid_c")
+    if mid:
+        if st.button("⚪ MOMENTO", key="c_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n⚪ Em Andamento", mid)
+        if st.button("✅ GREEN", key="c_gr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n✅✅✅ GREEN ✅✅✅", mid)
+        if st.button("❌ RED", key="c_red"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n❌❌❌ RED ❌❌❌", mid)
+
+c1, c2, c3 = st.columns(3)
+with c1: jogo_normal("JOGO_A")
+with c2: jogo_normal("JOGO_B")
+with c3: jogo_c_escanteios()
