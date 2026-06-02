@@ -9,8 +9,8 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-# Aviso de Responsabilidade com espaçamento
-AVISO_MSG = "\n\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
+# Aviso de Responsabilidade
+AVISO_MSG = "\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b\d+\b', texto)
@@ -58,13 +58,15 @@ def renderizar_bloco(titulo):
             st.session_state[f"analise_{titulo}"] = True
             
         if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
+            # Espaçamento adicionado aqui
             msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 Campeonato: {camp}\n\n⚔️ Confronto: {casa} x {vis}\n\n🎯 Mercado: Cantos Asiáticos ({ou} {entrada})\n\n💎 Entrada: {entrada}\n\n🕒 Horário: {hora} (BR){AVISO_MSG}"
             res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
             if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
 
         if f"id_{titulo}" in st.session_state:
             def ed(status):
-                info_extras = f"\n\n\n🏠 Cantos Casa: {int(cc)}\n\n✈️ Cantos Visitante: {int(cv)}\n\n📊 Total de Cantos: {int(cc+cv)}"
+                # Espaçamento adicionado aqui
+                info_extras = f"\n\n🏠 Cantos Casa: {int(cc)}\n\n✈️ Cantos Visitante: {int(cv)}\n\n📊 Total de Cantos: {int(cc+cv)}"
                 txt = f"{st.session_state[f'msg_{titulo}'].replace(AVISO_MSG, '')}{info_extras}\n\n{status if status != 'INFO_MOMENTO' else ''}{AVISO_MSG}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f'id_{titulo}'], "text": txt})
             
@@ -81,13 +83,13 @@ def renderizar_bloco(titulo):
         if st.button("Analisar", key=f"an_{titulo}"): st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
         if f"res_{titulo}" in st.session_state:
             tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n\n🆚 {casa} x {vis}\n\n🎯 {tipo}\n\n📈 {prob}%\n\n⏰ {hora}{AVISO_MSG}"
+            msg = f"🚨 Alerta 🚨\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n📈 {prob}%\n⏰ {hora}{AVISO_MSG}"
             if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
                 res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
         if f"id_{titulo}" in st.session_state:
             def at(stts, inf):
-                txt = f"{st.session_state[f'msg_{titulo}'].replace(AVISO_MSG, '')}\n\n\n⚽ {inf}\n\n🔄 {stts}{AVISO_MSG}"
+                txt = f"{st.session_state[f'msg_{titulo}'].replace(AVISO_MSG, '')}\n\n⚽ {inf}\n\n🔄 {stts}{AVISO_MSG}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": txt})
             c1, c2, c3, c4 = st.columns(4)
             if c1.button("MOMENTO", key=f"m_{titulo}"): at("✅ GREEN ✅", f"Momento: {pm}")
