@@ -43,10 +43,8 @@ def jogo_normal(nome):
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
-    
     prognostico = st.selectbox("Prognóstico", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"prog_{nome}")
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
-    
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
@@ -74,12 +72,15 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# --- JOGO C MANTIDO COMO ESTAVA ANTES ---
+# --- JOGO C MANTIDO COMO ESTAVA ORIGINALMENTE ---
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
+    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
+    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
+    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
     e_casa_atual = st.number_input("Cantos Casa", step=1, key="e_casa_c")
