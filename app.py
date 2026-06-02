@@ -35,6 +35,7 @@ def calcular_probabilidade(texto):
 
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
+    
     if titulo == "JOGO_D":
         camp = st.text_input("Campeonato", key=f"c_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
@@ -47,29 +48,31 @@ def renderizar_bloco(titulo):
         ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
         entrada = st.text_input("Entrada", key=f"e_{titulo}")
         
-        if st.button("📊 ANALISAR", key=f"an_{titulo}"):
-            media_calc = (media_time + media_liga) / 2
-            media_final = round(media_calc * 2) / 2 # Garante final .0 ou .5
+        if st.button("📊 ANALISAR JOGO D", key=f"an_{titulo}"):
+            media_final = round(((media_time + media_liga) / 2) * 2) / 2
             st.session_state[f"media_final_{titulo}"] = media_final
-            st.write(f"Média Calculada: {media_final:.1f}")
-            p = [82, 73, 61, 49] # Exemplo de probabilidade
-            components.html(f"""<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><canvas id="cChart"></canvas><script>new Chart(document.getElementById('cChart'), {{type: 'bar', data: {{labels: ['7.5', '8.5', '9.5', '10.5'], datasets: [{{data: {p}, backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']}}]}}}});</script>""", height=250)
+            st.write(f"Média Final Calculada: {media_final:.1f}")
+            # Gráfico fixo
+            components.html("""<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><div style="width:100%; background:#1e293b; padding:15px; border-radius:15px;"><canvas id="cChart"></canvas></div><script>new Chart(document.getElementById('cChart'), {type: 'bar', data: {labels: ['7.5', '8.5', '9.5', '10.5'], datasets: [{data: [82, 73, 61, 49], backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']}]}, options: {plugins: {legend: {display: false}}}});</script>""", height=250)
             st.session_state[f"analise_{titulo}"] = True
-        
+            
         if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
             msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos Asiáticos ({ou} {entrada})\n💎 Entrada: {entrada}\n🕒 Horário: {hora} (BR)"
             res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
             if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
-            
+
         if f"id_{titulo}" in st.session_state:
             def ed(status):
-                txt = f"{st.session_state[f'msg_{titulo}']}\n\n🏠 Cantos Casa: {int(cc)}\n✈️ Cantos Visitante: {int(cv)}\n📊 Total de Cantos: {int(cc+cv)}\n\n{status}"
+                info_extras = f"\n\n🏠 Cantos Casa: {int(cc)}\n✈️ Cantos Visitante: {int(cv)}\n📊 Total de Cantos: {int(cc+cv)}"
+                txt = f"{st.session_state[f'msg_{titulo}']}{info_extras}\n\n{status if status != 'INFO_MOMENTO' else ''}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f'id_{titulo}'], "text": txt})
+            
             c1, c2, c3, c4 = st.columns(4)
-            if c1.button("MOMENTO", key=f"mom_{titulo}"): ed("✅ GREEN ✅")
+            if c1.button("MOMENTO", key=f"mom_{titulo}"): ed("INFO_MOMENTO")
             if c2.button("HT", key=f"ht_{titulo}"): ed("✅ GREEN HT ✅")
             if c3.button("HT 2", key=f"ht2_{titulo}"): ed("❌ RED HT ❌")
             if c4.button("FINAL", key=f"fin_{titulo}"): ed("✅ GREEN FINAL ✅")
+
     else:
         camp = st.text_input("Campeonato", key=f"c_{titulo}")
         casa = st.text_input("Casa", key=f"ca_{titulo}")
