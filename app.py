@@ -225,7 +225,15 @@ def renderizar_bloco(titulo):
         st.info("Pronto para enviar ao Telegram.")
 
 col1, col2, col3, col4 = st.columns(4)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
-with col3: renderizar_bloco("JOGO_C")
-with col4: renderizar_bloco("JOGO_D")
+
+with col1:
+    jogo_normal("JOGO_A")
+
+with col2:
+    jogo_normal("JOGO_B")
+
+with col3:
+    jogo_normal("JOGO_C")
+
+with col4:
+    jogo_d()
