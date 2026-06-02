@@ -46,30 +46,61 @@ def renderizar_bloco(titulo):
         cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
         ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
         entrada = st.text_input("Linha (Ex: 8.5)", key=f"e_{titulo}")
+        
         if st.button("📊 ANALISAR", key=f"an_{titulo}"):
             media_final = (media_time + media_liga) / 2
-            def calc_prob(limite): return int(max(min(100 - (limite - media_final) * 12, 95), 5))
+            def calc_prob(limite): return int(max(min(100 - abs(limite - media_final) * 12, 95), 5))
             p75, p85, p95, p105 = calc_prob(7.5), calc_prob(8.5), calc_prob(9.5), calc_prob(10.5)
             st.session_state[f"analise_{titulo}"] = True
-            components.html(f"""<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><div style="width:100%; background:#1e293b; padding:15px; border-radius:15px;"><canvas id="cChart"></canvas></div><script>new Chart(document.getElementById('cChart'), {{type: 'bar', data: {{labels: ['7.5', '8.5', '9.5', '10.5'], datasets: [{{data: [{p75}, {p85}, {p95}, {p105}], backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'], borderRadius: 8}}]}}, options: {{plugins: {{legend: {{display: false}}}}, scales: {{y: {{beginAtZero: true, max: 100, ticks: {{color: 'white'}}}}, x: {{ticks: {{color: 'white'}}}}}} }}});</script>""", height=300)
+            components.html(f"""
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <div style="width:100%; background:#1e293b; padding:15px; border-radius:15px;">
+                <canvas id="cChart"></canvas>
+            </div>
+            <script>
+                new Chart(document.getElementById('cChart'), {{
+                    type: 'bar',
+                    data: {{
+                        labels: ['7.5', '8.5', '9.5', '10.5'],
+                        datasets: [{{
+                            data: [{p75}, {p85}, {p95}, {p105}],
+                            backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'],
+                            borderRadius: 8
+                        }}]
+                    }},
+                    options: {{ plugins: {{ legend: {{ display: false }} }}, scales: {{ y: {{ beginAtZero: true, max: 100, ticks: {{ color: 'white' }} }}, x: {{ ticks: {{ color: 'white' }} }} }} }}
+                }});
+            </script>
+            """, height=300)
+
         if st.session_state.get(f"analise_{titulo}"):
             msg_base = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos Asiáticos ({ou} {entrada})\n💎 Entrada: {entrada}\n🕒 Horário: {hora} (BR)"
             if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
                 res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg_base}).json()
-                if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg_base
+                if res.get("ok"): 
+                    st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                    st.session_state[f"msg_{titulo}"] = msg_base
+
         if f"id_{titulo}" in st.session_state:
             def editar(status):
                 new = f"{st.session_state[f'msg_{titulo}']}\n\n🏠 Cantos Casa: {int(st.session_state[f'cc_{titulo}'])}\n✈️ Cantos Visitante: {int(st.session_state[f'cv_{titulo}'])}\n📊 Total: {int(st.session_state[f'cc_{titulo}'] + st.session_state[f'cv_{titulo}'])}\n\n{status}"
                 requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new})
+            
             c1, c2, c3, c4 = st.columns(4)
             if c1.button("MOMENTO", key=f"mom_{titulo}"): editar("✅ GREEN ✅")
             if c2.button("HT", key=f"ht_{titulo}"): editar("✅ GREEN HT ✅")
             if c3.button("HT 2", key=f"ht2_{titulo}"): editar("❌ RED HT ❌")
             if c4.button("FINAL", key=f"fin_{titulo}"): editar("✅ GREEN FINAL ✅")
     else:
-        camp, casa, vis = st.text_input("Campeonato", key=f"c_{titulo}"), st.text_input("Casa", key=f"ca_{titulo}"), st.text_input("Visitante", key=f"v_{titulo}")
-        prob, hora, pm = st.text_input("Probabilidade", key=f"pb_{titulo}"), st.text_input("Horário", key=f"h_{titulo}"), st.text_input("Momento", key=f"pm_{titulo}")
-        pht, pf, lista = st.text_input("HT", key=f"pht_{titulo}"), st.text_input("Final", key=f"pf_{titulo}"), st.text_area("Lista de jogos", key=f"l_{titulo}")
+        camp = st.text_input("Campeonato", key=f"c_{titulo}")
+        casa = st.text_input("Casa", key=f"ca_{titulo}")
+        vis = st.text_input("Visitante", key=f"v_{titulo}")
+        prob = st.text_input("Probabilidade", key=f"pb_{titulo}")
+        hora = st.text_input("Horário", key=f"h_{titulo}")
+        pm = st.text_input("Momento", key=f"pm_{titulo}")
+        pht = st.text_input("HT", key=f"pht_{titulo}")
+        pf = st.text_input("Final", key=f"pf_{titulo}")
+        lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         if st.button("Analisar", key=f"an_{titulo}"): st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
         if f"res_{titulo}" in st.session_state:
             tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
