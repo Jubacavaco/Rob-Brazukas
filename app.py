@@ -8,8 +8,6 @@ st.title("🤖 Sistema Brazukas Top Tips")
 # Suas credenciais diretas
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
-SUPABASE_URL = "https://levzsvuikgqfnosykigi.supabase.co"
-SUPABASE_KEY = "sb_publishable_esm8GzVdsIrPSjfcAkcX8Q_0NYasNBn"
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b\d+\b', texto)
@@ -51,8 +49,19 @@ def renderizar_bloco(titulo):
 
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
+        
+        # Gráficos (Barras de Progresso)
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
+        st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
+        st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
+        
+        # Mercados Fortes
+        st.write("🔥 **Mercados Fortes:**")
+        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
+        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
+        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
+        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
         tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
         
@@ -74,7 +83,7 @@ def renderizar_bloco(titulo):
                 st.session_state[f"msg_{titulo}"] = msg
                 st.success("Enviado com sucesso!")
             else:
-                st.error(f"Erro do Telegram: {res.get('description')}")
+                st.error(f"Erro: {res.get('description')}")
 
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
