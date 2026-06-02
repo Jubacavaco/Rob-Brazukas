@@ -18,7 +18,6 @@ def telegram(msg, msg_id=None):
     except: return None
 
 def calcular_probs(lista):
-    # Lógica de exemplo: ajusta os valores com base no tamanho da lista
     n = len(lista)
     return {"O 1.5": 50+n, "O 2.5": 40+n, "BTTS": 30+n, "LTD": 20+n}
 
@@ -33,8 +32,9 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
         st.session_state[f"probs_{nome}"] = calcular_probs(lista)
 
+    # AQUI ESTÁ A CORREÇÃO: usamos .get() para não dar erro se a chave não existir ainda
     if st.session_state.get(f"analise_{nome}", False):
-        p = st.session_state[f"probs_{nome}"]
+        p = st.session_state.get(f"probs_{nome}", {"O 1.5": 0, "O 2.5": 0, "BTTS": 0, "LTD": 0})
         st.bar_chart(p)
         st.write(f"✅ O 1.5: {p['O 1.5']}% | 🔥 LTD: {p['LTD']}%")
         
@@ -53,9 +53,9 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\nFT: ({ft})\n🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
 
-# --- LAYOUT FIXO ---
+# Layout com 4 colunas (A, B, C, D)
 col1, col2, col3, col4 = st.columns(4)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_normal("JOGO_C")
-with col4: st.write("🏟️ JOGO D (Em breve)")
+with col4: jogo_normal("JOGO_D")
