@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Pro")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
@@ -31,11 +31,9 @@ def jogo_normal(nome):
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
-        st.success("Análise registrada!")
 
     if st.session_state.get(f"analise_{nome}"):
-        dados_grafico = {"O 1.5": 80, "O 2.5": 60, "BTTS": 70, "LTD": 40, "CASA": 65, "VIS": 20}
-        st.bar_chart(dados_grafico)
+        st.bar_chart({"O 1.5": 80, "O 2.5": 60, "BTTS": 70, "LTD": 40, "CASA": 65, "VIS": 20})
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
@@ -55,4 +53,23 @@ def jogo_normal(nome):
             if c2.button("❌ RED", key=f"red_{nome}"):
                 telegram(f"{base}\nHT: {ht}\nFT: {ft}\n❌ RED", mid)
 
-# Função Jogo D omitida por brevidade, mas segue o mesmo padrão.
+def jogo_d():
+    st.subheader("🏟️ JOGO_D (Escanteios)")
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
+    if st.button("🚀 ENVIAR ALERTA", key="d_env"): 
+        st.session_state["mid_d"] = telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}")
+    
+    mid = st.session_state.get("mid_d")
+    if mid:
+        c1, c2 = st.columns(2)
+        if c1.button("⏱️ MOMENTO", key="d_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🟢 Em Andamento", mid)
+        if c1.button("✅ HT GREEN", key="d_htg"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n✅ HT GREEN!", mid)
+        if c2.button("🏆 FINAL GREEN", key="d_fng"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🏆 FINAL GREEN!", mid)
+        if c2.button("❌ RED", key="d_fnr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n❌ RED!", mid)
+
+# Colunas principais
+c1, c2, c3, c4 = st.columns(4)
+with c1: jogo_normal("JOGO_A")
+with c2: jogo_normal("JOGO_B")
+with c3: jogo_normal("JOGO_C")
+with c4: jogo_d()
