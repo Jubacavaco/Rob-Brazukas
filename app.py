@@ -33,6 +33,7 @@ def jogo_normal(nome):
         casa = st.text_input("Casa")
         visitante = st.text_input("Visitante")
         horario = st.text_input("Horário")
+        lista = st.text_area("Lista de Jogos") # Campo restaurado
         ht = st.text_input("Placar HT")
         ft = st.text_input("Placar FT")
         mercado = st.selectbox("Mercado", ["BTTS", "OVER 1.5 FT", "OVER 2.5 FT", "LTD", "Casa vence", "Visitante"])
@@ -47,7 +48,7 @@ def jogo_normal(nome):
         st.success("Análise concluída!")
 
     if btn_enviar:
-        msg = f"{nome}\n⚔️ {casa} x {visitante}\n🕒 {horario}\nHT: {ht} | FT: {ft}\n🎯 Mercado: {mercado}\n📊 {prog}% {'🔥 MERCADO PEGANDO FOGO' if prog >= 70 else '⚠️ Mercado estável'}"
+        msg = f"{nome}\n⚔️ {casa} x {visitante}\n🕒 {horario}\n📝 Lista: {lista}\nHT: {ht} | FT: {ft}\n🎯 Mercado: {mercado}\n📊 {prog}% {'🔥 MERCADO PEGANDO FOGO' if prog >= 70 else '⚠️ Mercado estável'}"
         enviar_telegram(msg)
         st.success("Enviado com sucesso!")
 
