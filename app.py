@@ -20,10 +20,14 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# Função de cálculo pura (processa apenas o que recebe)
+# Função de cálculo corrigida para processar a string da lista de cada jogo
 def processar_calculo(lista_str):
-    nums = [int(n) for n in lista_str.replace(' ', '').split(',') if n.isdigit()]
-    if len(nums) < 20: nums = [1] * 20
+    # Converte a string digitada em uma lista de números reais
+    nums = [int(n) for n in lista_str.replace(' ', '').replace(',', ' ').split() if n.isdigit()]
+    
+    # Se não houver 20 números, preenche com padrão neutro para evitar erro
+    if len(nums) < 20: 
+        nums = [1] * 20 
     
     h_s, h_c = nums[0:5], nums[5:10]
     a_s, a_c = nums[10:15], nums[15:20]
@@ -51,10 +55,10 @@ def jogo_normal(nome):
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
+    lista = st.text_area("Lista de Análise (Digite 20 números separados por vírgula)", key=f"lista_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        # Processa e salva no session_state específico deste jogo
+        # AQUI O CÁLCULO É FEITO APENAS COM A LISTA DESTE JOGO
         st.session_state[f"res_{nome}"] = processar_calculo(lista)
         st.session_state[f"analise_{nome}"] = True
 
@@ -79,7 +83,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# JOGO C MANTIDO COMO VOCÊ QUERIA
+# Jogo C preservado conforme solicitado
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -101,7 +105,6 @@ def jogo_c_escanteios():
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
             msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}\n📈 Conf: {conf}%"
             st.session_state["mid_c"] = telegram(msg)
-        
         mid = st.session_state.get("mid_c")
         if mid:
             base = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}"
