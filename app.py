@@ -90,8 +90,6 @@ def renderizar_bloco(titulo):
                 status = "GREEN 🟢✅"
             elif modo == "HT":
                 txt_placar = f"\n⚽ HT: {pht}"
-            elif modo == "HT2":
-                txt_placar = f"\n⚽ HT: {pht}"
             elif modo == "FINAL":
                 txt_placar = f"\n⚽ HT: {pht}\n⚽ Final: {pf}"
             elif modo == "RED":
@@ -103,12 +101,11 @@ def renderizar_bloco(titulo):
                           data={"chat_id": CHAT_ID, "message_id": msg_id, "text": txt, "parse_mode": "Markdown"})
             st.success(f"Atualizado: {status}")
 
-        c1, c2, c3, c4, c5 = st.columns(5)
+        c1, c2, c3, c4 = st.columns(4)
         if c1.button("Momento", key=f"m_{titulo}"): atualizar_telegram("GREEN 🟢✅", "MOMENTO")
         if c2.button("HT", key=f"ht_{titulo}"): atualizar_telegram("EM ANDAMENTO ⚪", "HT")
-        if c3.button("HT 2", key=f"ht2_{titulo}"): atualizar_telegram("EM ANDAMENTO ⚪", "HT2")
-        if c4.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
-        if c5.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
+        if c3.button("Final", key=f"f_{titulo}"): atualizar_telegram("GREEN 🟢✅", "FINAL")
+        if c4.button("RED", key=f"r_{titulo}"): atualizar_telegram("RED 🔴❌", "RED")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
