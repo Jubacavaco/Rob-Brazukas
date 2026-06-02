@@ -45,44 +45,45 @@ def jogo_normal(nome):
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
         st.session_state[f"p_{nome}"] = {"BTTS": 60, "O1.5": 80, "O2.5": 50, "LTD": 70}
+        st.success("Análise feita!")
 
-    if f"d_{nome}" in st.session_state:
-        renderizar_grafico(st.session_state[f"p_{nome}"])
-        d = st.session_state[f"d_{nome}"]
+    d = st.session_state.get(f"d_{nome}")
+    if d:
+        renderizar_grafico(st.session_state.get(f"p_{nome}", {}))
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"""🚨 Alerta de Cantos 🚨
 
-🏆 Campeonato: {d['camp']}
-🆚 Jogo: {d['casa']} x {d['vis']}
-🎯 Mercado: {d['merc']}
+🏆 Campeonato: {d.get('camp')}
+🆚 Jogo: {d.get('casa')} x {d.get('vis')}
+🎯 Mercado: {d.get('merc')}
 💥 Prognóstico: Analisado
-📈 Probabilidade: {d['prob']}%
-⏰ Horário: {d['hor']} (BR)
+📈 Probabilidade: {d.get('prob')}%
+⏰ Horário: {d.get('hor')} (BR)
 
 🔞 Aposte com responsabilidade.
 ⚠️ Não há garantias de lucro."""
             st.session_state[f"mid_{nome}"] = telegram(msg)
             
-        if f"mid_{nome}" in st.session_state:
-            mid = st.session_state[f"mid_{nome}"]
+        mid = st.session_state.get(f"mid_{nome}")
+        if mid:
             c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"⏱️ AO VIVO\n{d['casa']} x {d['vis']}\nHT: {d['ht']} | FT: {d['ft']}", mid)
-            if c1.button("✅ HT GREEN", key=f"htg_{nome}"): telegram(f"✅ HT GREEN!\n{d['casa']} x {d['vis']}\nHT: {d['ht']}", mid)
-            if c2.button("✅ FINAL GREEN", key=f"fng_{nome}"): telegram(f"🏆 FINAL GREEN!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"❌ RED!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}", mid)
+            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"⏱️ AO VIVO\n{d.get('casa')} x {d.get('vis')}\nHT: {d.get('ht')} | FT: {d.get('ft')}", mid)
+            if c1.button("✅ HT GREEN", key=f"htg_{nome}"): telegram(f"✅ HT GREEN!\n{d.get('casa')} x {d.get('vis')}\nHT: {d.get('ht')}", mid)
+            if c2.button("✅ FINAL GREEN", key=f"fng_{nome}"): telegram(f"🏆 FINAL GREEN!\n{d.get('casa')} x {d.get('vis')}\nFT: {d.get('ft')}", mid)
+            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"❌ RED!\n{d.get('casa')} x {d.get('vis')}\nFT: {d.get('ft')}", mid)
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
     linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
-    if st.button("HT GREEN", key="d_htg"): telegram("JOGO D: HT GREEN\nLinha: " + str(linha))
-    if st.button("HT RED", key="d_htr"): telegram("JOGO D: HT RED\nLinha: " + str(linha))
-    if st.button("MOMENTO", key="d_mom"): telegram("JOGO D: MOMENTO\nLinha: " + str(linha))
-    if st.button("FINAL GREEN", key="d_fng"): telegram("JOGO D: FINAL GREEN\nLinha: " + str(linha))
-    if st.button("FINAL RED", key="d_fnr"): telegram("JOGO D: FINAL RED\nLinha: " + str(linha))
+    if st.button("HT GREEN", key="d_htg"): telegram(f"JOGO D: HT GREEN\nLinha: {linha}")
+    if st.button("HT RED", key="d_htr"): telegram(f"JOGO D: HT RED\nLinha: {linha}")
+    if st.button("MOMENTO", key="d_mom"): telegram(f"JOGO D: MOMENTO\nLinha: {linha}")
+    if st.button("FINAL GREEN", key="d_fng"): telegram(f"JOGO D: FINAL GREEN\nLinha: {linha}")
+    if st.button("FINAL RED", key="d_fnr"): telegram(f"JOGO D: FINAL RED\nLinha: {linha}")
 
-col1, col2, col3, col4 = st.columns(4)
-with col1: jogo_normal("JOGO_A")
-with col2: jogo_normal("JOGO_B")
-with col3: jogo_normal("JOGO_C")
-with col4: jogo_d()
+c1, c2, c3, c4 = st.columns(4)
+with c1: jogo_normal("JOGO_A")
+with c2: jogo_normal("JOGO_B")
+with c3: jogo_normal("JOGO_C")
+with c4: jogo_d()
