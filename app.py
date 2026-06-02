@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
@@ -18,39 +19,45 @@ def enviar_ou_editar(nome, msg):
         if resp.get("ok"):
             st.session_state[f"msg_id_{nome}"] = resp["result"]["message_id"]
 
+def renderizar_grafico(dados):
+    labels, valores = list(dados.keys()), list(dados.values())
+    components.html(f"""
+    <div style="height:200px;"><canvas id="chart"></canvas></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    new Chart(document.getElementById('chart'), {{
+        type: 'bar',
+        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#3b82f6' }}] }},
+        options: {{ responsive: true, maintainAspectRatio: false }}
+    }});
+    </script>
+    """, height=220)
+
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
     
-    # Inputs (Sem form, para reagir instantaneamente)
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     visitante = st.text_input("Visitante", key=f"vis_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    lista = st.text_area("Lista de Jogos", key=f"lista_{nome}")
+    lista = st.text_area("Lista", key=f"lista_{nome}")
     mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
     prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
 
-    # Botão de Análise (Agora funciona pois não está dentro de um form)
-    if st.button("📊 ANALISAR", key=f"btn_ana_{nome}"):
-        st.session_state[f"dados_{nome}"] = {
-            "camp": camp, "casa": casa, "vis": visitante, 
-            "horario": horario, "ht": ht, "ft": ft, 
-            "merc": mercado, "prob": prob
-        }
+    if st.button("📊 ANALISAR", key=f"ana_{nome}"):
+        # Simulando dados para o gráfico
+        probs = {"BTTS": 60, "O1.5": 80, "O2.5": 50, "LTD": 70}
+        st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
+        st.session_state[f"probs_{nome}"] = probs
         st.success("Análise concluída!")
+        st.rerun()
 
-    # Botão de Envio (Mantido separado)
-    if st.button("🚀 ENVIAR ALERTA", key=f"btn_env_{nome}") and f"dados_{nome}" in st.session_state:
-        d = st.session_state[f"dados_{nome}"]
-        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {d['merc']}\n💥 Prognóstico: Analisado\n📈 Probabilidade: {d['prob']}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
-        enviar_ou_editar(nome, msg)
-        st.success("Enviado!")
-
-    # Botões de Ação
     if f"dados_{nome}" in st.session_state:
+        renderizar_grafico(st.session_state[f"probs_{nome}"])
         d = st.session_state[f"dados_{nome}"]
+        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("⏱️ MOMENTO", key=f"mom_{nome}"): enviar_ou_editar(nome, f"⏱️ AO VIVO\n{d['casa']} x {d['vis']}\nHT: {d['ht']} | FT: {d['ft']}")
@@ -58,6 +65,11 @@ def jogo_normal(nome):
         with col2:
             if st.button("✅ FINAL GREEN", key=f"fng_{nome}"): enviar_ou_editar(nome, f"🏆 FINAL GREEN!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
             if st.button("❌ RED", key=f"red_{nome}"): enviar_ou_editar(nome, f"❌ RED!\n{d['casa']} x {d['vis']}\nFT: {d['ft']}")
+
+    if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}") and f"dados_{nome}" in st.session_state:
+        d = st.session_state[f"dados_{nome}"]
+        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {d['merc']}\n💥 Prognóstico: Analisado\n📈 Probabilidade: {d['prob']}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
+        enviar_ou_editar(nome, msg)
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
