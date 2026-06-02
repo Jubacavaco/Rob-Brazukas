@@ -53,12 +53,16 @@ def renderizar_bloco(titulo):
         
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
+        st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
+        st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
         st.write("🔥 **Mercados Fortes:**")
         if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
         if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
+        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
+        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
-        tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
+        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
         
         msg = (f"🚨 Alerta de Entrada 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
@@ -66,8 +70,9 @@ def renderizar_bloco(titulo):
                f"🎯 Mercado: {tipo}\n"
                f"💥 Prognóstico: {prog}\n"
                f"📈 Probabilidade: {prob}\n"
-               f"⏰ Horário: {hora}\n\n"
-               f"⚠️ Aposte com responsabilidade. Não há garantias de lucro.")
+               f"⏰ Horário: {hora}\n\n\n"
+               f"🔞 Aposte com responsabilidade.\n"
+               f"⚠️ Não há garantias de lucro.")
         
         st.info(msg)
         
