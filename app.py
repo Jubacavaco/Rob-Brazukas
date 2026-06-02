@@ -1,40 +1,47 @@
 import streamlit as st
 import requests
 import pandas as pd
-import re
 
-# ... (Mantendo as funções de Config e Telegram intactas)
+# Configuração da Página
+st.set_page_config(layout="wide", page_title="Sistema Brazukas")
+st.title("🤖 Sistema Brazukas Pro")
 
-def calcular_metricas_reais(lista_texto):
-    """
-    Lógica de cálculo: Analisa a frequência de termos e números no texto 
-    para gerar probabilidades dinâmicas.
-    """
-    lista_texto = lista_texto.lower()
-    
-    # Extração de números do texto (ex: se o usuário digitar "3 gols", "80% de chance")
-    numeros = re.findall(r'\d+', lista_texto)
-    fator = int(numeros[0]) if numeros else 10 
-    
-    # Base de cálculo inicial diferente para cada mercado
-    scores = {
-        "Over 1.5 FT": 40 + (fator if "gol" in lista_texto else 0),
-        "Over 2.5 FT": 30 + (fator if "over" in lista_texto else 0),
-        "BTTS": 35 + (fator if "ambas" in lista_texto else 0),
-        "LTD": 20 + (fator if "ltd" in lista_texto else 0),
-        "Casa Vence": 45 + (fator if "casa" in lista_texto else 0),
-        "Visitante Vence": 45 + (fator if "fora" in lista_texto else 0)
+TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
+CHAT_ID = "-1003925163611"
+RODAPE = "\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
+
+def telegram(msg, msg_id=None):
+    url = f"https://api.telegram.org/bot{TOKEN}/"
+    texto_final = msg + RODAPE
+    try:
+        if msg_id:
+            requests.post(url + "editMessageText", json={"chat_id": CHAT_ID, "message_id": msg_id, "text": texto_final})
+        else:
+            resp = requests.post(url + "sendMessage", json={"chat_id": CHAT_ID, "text": texto_final}).json()
+            return resp.get("result", {}).get("message_id")
+    except: return None
+
+# Lógica de cálculo real baseada no conteúdo da lista
+def calcular_metricas(lista_texto):
+    lista = lista_texto.lower()
+    # Base inicial variada para evitar empate em 50%
+    metricas = {
+        "Over 1.5 FT": 45, "Over 2.5 FT": 40, "BTTS": 35, 
+        "LTD": 30, "Casa Vence": 50, "Visitante Vence": 45
     }
     
-    # Normalização para não passar de 99%
-    for k in scores:
-        scores[k] = min(99, max(10, scores[k]))
-        
-    return pd.DataFrame(list(scores.values()), index=scores.keys(), columns=['%'])
+    # Aplica pesos baseados em palavras-chave encontradas na sua lista
+    if "gol" in lista: metricas["Over 1.5 FT"] += 30; metricas["Over 2.5 FT"] += 25
+    if "ambas" in lista or "btts" in lista: metricas["BTTS"] += 40
+    if "casa" in lista: metricas["Casa Vence"] += 25
+    if "visitante" in lista or "fora" in lista: metricas["Visitante Vence"] += 25
+    if "ltd" in lista: metricas["LTD"] += 35
+    
+    return metricas
 
+# Função Jogo Normal (A e B)
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
-    # ... (Inputs permanecem exatamente como antes)
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
@@ -51,19 +58,16 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}", False):
-        st.write("### 📊 Probabilidades Calculadas")
-        df = calcular_metricas_reais(lista)
+        st.write("### 📊 Análise de Tendência")
+        resultados = calcular_metricas(lista)
         
-        # Exibição vertical limpa
-        for mercado_nome, row in df.iterrows():
-            st.write(f"**{mercado_nome}:** {row['%']}%")
+        # Exibe lista vertical de porcentagens
+        for mercado_item, valor in resultados.items():
+            st.write(f"**{mercado_item}:** {min(valor, 99)}%")
         
-        melhor_mercado = df['%'].idxmax()
-        
-        st.write("---")
-        st.success(f"🎯 Mercado Mais Forte: {melhor_mercado} ({df.loc[melhor_mercado].values[0]}%)")
+        melhor = max(resultados, key=resultados.get)
+        st.success(f"🎯 Aposta Recomendada: {melhor} ({resultados[melhor]}%)")
 
-        # ... (Botões de Envio e Alertas permanecem intactos)
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
@@ -77,4 +81,48 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# ... (Mantém o Jogo C exatamente como estava antes)
+# Função Jogo C (Mantida intacta)
+def jogo_c_escanteios():
+    st.subheader("🏟️ JOGO_C (Escanteios)")
+    camp_c = st.text_input("Campeonato", key="camp_c")
+    casa_c = st.text_input("Casa", key="casa_c")
+    vis_c = st.text_input("Visitante", key="vis_c")
+    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
+    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
+    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
+    ht_c = st.text_input("Placar HT", key="ht_c")
+    ft_c = st.text_input("Placar FT", key="ft_c")
+    e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, format="%d", key="e_casa_c")
+    e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, format="%d", key="e_vis_c")
+    total_esc = int(e_casa_atual + e_vis_atual)
+    
+    if st.button("📊 ANALISAR JOGO C", key="ana_c"):
+        st.session_state["analise_c"] = True
+
+    if st.session_state.get("analise_c", False):
+        st.write("### 📊 Gráfico de Escanteios FT")
+        st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
+        
+        linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
+        conf = st.slider("Porcentagem de Confiança", 0, 100, 70, key="conf_c")
+        
+        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n📈 Confiança: {conf}%"
+            st.session_state["mid_c"] = telegram(msg)
+
+        mid = st.session_state.get("mid_c")
+        if mid:
+            base = (f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n\n"
+                    f"Cantos Casa: {int(e_casa_atual)}\n"
+                    f"Cantos Visitante: {int(e_vis_atual)}\n"
+                    f"Total: {total_esc}")
+            c1, c2 = st.columns(2)
+            if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
+            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
+            if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
+
+col1, col2, col3 = st.columns(3)
+with col1: jogo_normal("JOGO_A")
+with col2: jogo_normal("JOGO_B")
+with col3: jogo_c_escanteios()
