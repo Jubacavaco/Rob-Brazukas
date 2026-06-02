@@ -62,11 +62,15 @@ def renderizar_bloco(titulo):
         if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
         tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD", "Quem Vence"], key=f"sel_{titulo}")
+        time_vencedor = st.text_input("Qual time/resultado?", key=f"venc_{titulo}", placeholder="Ex: Casa / Visitante / Empate")
+        
+        # Define o mercado final
+        mercado_final = f"{tipo} ({time_vencedor})" if tipo == "Quem Vence" else tipo
         
         msg = (f"🚨 Alerta de Entrada 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
-               f"🎯 Mercado: {tipo}\n"
+               f"🎯 Mercado: {mercado_final}\n"
                f"📈 Probabilidade: {prob}%\n"
                f"⏰ Horário: {hora}\n\n\n"
                f"🔞 Aposte com responsabilidade.\n"
