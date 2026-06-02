@@ -44,9 +44,9 @@ def jogo_normal(nome):
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
     
-    # Caixinhas restauradas
-    prognostico = st.multiselect("Prognóstico", ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"prog_{nome}")
-    prob = st.number_input("Porcentagem de Confiança (%)", 0, 100, 70, key=f"prob_{nome}")
+    prog_opcoes = ["Over 1.5 FT", "Over 2.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"]
+    prognostico = st.selectbox("Prognóstico", prog_opcoes, key=f"prog_{nome}")
+    prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
@@ -57,21 +57,18 @@ def jogo_normal(nome):
         st.session_state[f"res_{nome}"] = processar_calculo(lista)
         st.session_state[f"analise_{nome}"] = True
 
-    res = st.session_state.get(f"res_{nome}")
-    if st.session_state.get(f"analise_{nome}") and res:
-        st.write("### 📊 Resumo de Probabilidades")
+    if st.session_state.get(f"analise_{nome}"):
+        res = st.session_state.get(f"res_{nome}")
+        st.write("### 📊 Resumo")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
-        melhor = max(res, key=res.get)
-        st.success(f"🎯 Sugestão Estatística: {melhor}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            prog_str = ", ".join(prognostico)
-            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {prog_str}\n📈 Conf: {prob}%\n⏰ {horario}"
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {prognostico}\n💥 Prognóstico: {prognostico}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
-            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {', '.join(prognostico)}\n📈 {prob}%\n⏰ {horario}"
+            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {prognostico}\n💥 Prognóstico: {prognostico}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
@@ -83,23 +80,16 @@ def jogo_c_escanteios():
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
-    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
-    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
-    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
-    e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, key="e_casa_c")
-    e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, key="e_vis_c")
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
     if st.session_state.get("analise_c"):
-        st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
         linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
-        conf = st.slider("Confiança", 0, 100, 70, key="conf_c")
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}\n📈 Conf: {conf}%"
+            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}"
             st.session_state["mid_c"] = telegram(msg)
-        
+            
         mid = st.session_state.get("mid_c")
         if mid:
             base = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}"
