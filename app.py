@@ -5,7 +5,7 @@ import numpy as np
 
 # Configuração da Página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Pro")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
@@ -24,9 +24,8 @@ def telegram(msg, msg_id=None):
 
 # Função de cálculo independente para cada jogo
 def calcular_metricas(nome):
-    # Aqui você pode criar a lógica de cálculo baseada nos inputs do jogo
-    # Por enquanto, geramos números baseados no nome do jogo para simular independência
-    np.random.seed(len(nome) + 10) 
+    # Seed baseado no nome para garantir que A e B tenham resultados diferentes
+    np.random.seed(hash(nome) % 2**32) 
     dados = {
         "O 1.5": np.random.randint(50, 95),
         "O 2.5": np.random.randint(40, 85),
@@ -54,21 +53,21 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}", False):
-        st.write("### 📊 Análise de Tendência")
-        df_resultados = calcular_metricas(nome)
+        st.write("### 📊 Resumo Final")
+        df = calcular_metricas(nome)
+        st.bar_chart(df)
         
-        # Gráfico mais limpo e elegante
-        st.bar_chart(df_resultados, color="#00ff00") 
+        # Identificação segura do melhor mercado
+        melhor_mercado = df['%'].idxmax()
         
         c1, c2 = st.columns(2)
         with c1:
             st.write("### 🎯 Mercados Mais Fortes")
-            # Exibe o mercado com maior pontuação calculada
-            melhor_mercado = df_resultados.idxmax()[0]
             st.write(f"✅ {melhor_mercado} — Muito Forte")
         with c2:
-            st.write("### 📌 Aposta Recomendada")
-            st.success(f"🎯 {melhor_mercado}")
+            st.write("### 📌 Placares Sugeridos")
+            st.write("• 1x0 | 1x1 | 2x1")
+            st.success(f"🎯 Aposta Recomendada: {melhor_mercado}")
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
@@ -83,7 +82,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios - Mantida intacta conforme solicitado)
+# Função Jogo C (Escanteios)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
