@@ -38,12 +38,13 @@ def jogo_normal(nome):
     vis = st.text_input("Visitante", key=f"vis_{nome}")
     mercado = st.selectbox("Mercado", ["Match Odds", "Gols"], key=f"merc_{nome}")
     horario = st.text_input("Horário", key=f"hor_{nome}")
+    prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("HT", key=f"ht_{nome}")
     ft = st.text_input("FT", key=f"ft_{nome}")
-    lista = st.text_area("Lista de Jogos (Para análise)", key=f"lista_{nome}")
+    lista = st.text_area("Lista (Para análise)", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado}
+        st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
         st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "BTTS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
         st.success("Análise feita!")
 
@@ -52,17 +53,27 @@ def jogo_normal(nome):
         renderizar_grafico_barra(st.session_state.get(f"p_{nome}", {}))
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            # A mensagem NÃO contém a lista, conforme solicitado
-            msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n🎯 {d['merc']}\n⏰ {d['hor']}"
+            msg = f"""🚨 Alerta de Cantos 🚨
+
+🏆 Campeonato: {d['camp']}
+🆚 Jogo: {d['casa']} x {d['vis']}
+🎯 Mercado: {d['merc']}
+💥 Prognóstico: {d['merc']}
+📈 Probabilidade: {d['prob']}%
+⏰ Horário: {d['hor']} (BR)
+
+🔞 Aposte com responsabilidade.
+⚠️ Não há garantias de lucro."""
             st.session_state[f"mid_{nome}"] = telegram(msg)
             
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
             c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n🟢 Em Andamento\n⏰ HT: {d['ht']} | FT: {d['ft']}", mid)
-            if c1.button("✅ HT GREEN", key=f"htg_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n✅ HT GREEN! {d['ht']}", mid)
-            if c2.button("🏆 FINAL GREEN", key=f"fng_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\nHT: {d['ht']}\n🏆 FINAL GREEN! {d['ft']}", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\nHT: {d['ht']}\n❌ RED! {d['ft']}", mid)
+            # Atualizações mantendo o modelo solicitado
+            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🟢 Em Andamento\n⏰ Placar: HT {d['ht']} | FT {d['ft']}\n\n🔞 Aposte com responsabilidade.", mid)
+            if c1.button("✅ HT GREEN", key=f"htg_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n✅ HT GREEN! {d['ht']}\n\n🔞 Aposte com responsabilidade.", mid)
+            if c2.button("🏆 FINAL GREEN", key=f"fng_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🏆 FINAL GREEN! {d['ft']}\n\n🔞 Aposte com responsabilidade.", mid)
+            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n❌ RED! {d['ft']}\n\n🔞 Aposte com responsabilidade.", mid)
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
