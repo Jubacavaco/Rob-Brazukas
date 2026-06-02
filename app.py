@@ -21,7 +21,6 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# SUA LÓGICA DE CÁLCULO
 def analyze_match(data):
     def avg(lst): return sum(lst) / len(lst) if lst else 0
     h_s = avg(data["home_last_games_goals_scored"])
@@ -49,15 +48,16 @@ def jogo_normal(nome):
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    st.text_area("Lista de Análise", key=f"lista_{nome}")
+    lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         data = {"home_last_games_goals_scored": [2,0,1,0,4], "home_last_games_goals_conceded": [4,2,7,1,1], "away_last_games_goals_scored": [3,2,2,2,0], "away_last_games_goals_conceded": [5,1,1,2,0]}
         st.session_state[f"res_{nome}"] = analyze_match(data)
         st.session_state[f"analise_{nome}"] = True
 
-    if st.session_state.get(f"analise_{nome}"):
-        res = st.session_state[f"res_{nome}"]
+    # Correção para o KeyError: usamos .get() para verificar sem quebrar
+    res = st.session_state.get(f"res_{nome}")
+    if st.session_state.get(f"analise_{nome}") and res:
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
         melhor = max(res, key=res.get)
         st.success(f"🎯 Aposta Recomendada: {melhor}")
@@ -70,23 +70,17 @@ def jogo_c_escanteios():
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
-    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
-    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
-    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
-    e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, key="e_casa_c")
-    e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, key="e_vis_c")
+    e_casa_atual = st.number_input("Cantos Casa", step=1, key="e_casa_c")
+    e_vis_atual = st.number_input("Cantos Fora", step=1, key="e_vis_c")
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
     if st.session_state.get("analise_c"):
         st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
-        linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
-        conf = st.slider("Confiança", 0, 100, 70, key="conf_c")
-        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}\n📈 Conf: {conf}%"
-            st.session_state["mid_c"] = telegram(msg)
+        if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"): telegram(f"Alerta C: {camp_c}")
 
+# Layout intacto
 col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
