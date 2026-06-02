@@ -39,8 +39,8 @@ def jogo_normal(nome):
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
     
-    # Campo da Aposta Recomendada adicionado
-    aposta_rec = st.text_input("Aposta Recomendada", key=f"rec_{nome}", placeholder="Ex: Cantos HT / Over 1.5")
+    # Campo de input para a aposta
+    aposta_rec = st.text_input("Aposta Recomendada", key=f"rec_{nome}")
     
     mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
     prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
@@ -51,12 +51,14 @@ def jogo_normal(nome):
             "ht": ht, "ft": ft, "merc": mercado, "prob": prob, "rec": aposta_rec
         }
         st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "AMBOS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
-        st.success("Análise e Recomendação salvas!")
+        st.success("Análise feita!")
 
     d = st.session_state.get(f"d_{nome}")
     p = st.session_state.get(f"p_{nome}")
     
     if d and p:
+        # A CAIXA VISUAL NO SITE
+        st.info(f"🎯 **Aposta Recomendada:** {d.get('rec')}")
         renderizar_grafico(p)
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
