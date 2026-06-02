@@ -49,7 +49,6 @@ def renderizar_bloco(titulo):
 
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
-        
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
         st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
@@ -63,18 +62,13 @@ def renderizar_bloco(titulo):
         
         tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
         
-        msg = (f"🚨 *ALERTA DE ENTRADA*\n\n"
-               f"🏆 *Campeonato:* {camp}\n"
-               f"⚽ *Jogo:* {casa} x {vis}\n"
-               f"🎯 *Mercado:* {tipo}\n"
-               f"⏰ *Horário:* {hora}")
+        msg = (f"🚨 *ALERTA DE ENTRADA*\n\n🏆 *Campeonato:* {camp}\n⚽ *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}")
         
         st.info(msg)
         
         if st.button("🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}"):
-            url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
             payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
-            r = requests.post(url, data=payload)
+            r = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data=payload)
             if r.json().get("ok"):
                 st.session_state[f"id_{titulo}"] = r.json()["result"]["message_id"]
                 st.session_state[f"msg_{titulo}"] = msg
@@ -82,5 +76,18 @@ def renderizar_bloco(titulo):
 
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
-            url = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-            payload = {"
+            new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"
+            payload = {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text, "parse_mode": "Markdown"}
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data=payload)
+        
+        c1, c2, c3, c4 = st.columns(4)
+        if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
+        if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
+        if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
+        if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1: renderizar_bloco("JOGO_A")
+with col2: renderizar_bloco("JOGO_B")
+with col3: renderizar_bloco("JOGO_C")
+with col4: renderizar_bloco("JOGO_D")
