@@ -21,19 +21,19 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# Lógica de cálculo real baseada no input
+# Lógica de cálculo baseada na lista de entrada
 def calcular_metricas_reais(lista_texto):
     lista_texto = lista_texto.lower()
-    # Pontuação base para cada mercado
-    scores = {"O 1.5": 50, "O 2.5": 50, "BTTS": 50, "LTD": 50}
+    scores = {"Over 1.5 FT": 50, "Over 2.5 FT": 50, "BTTS": 50, "LTD": 50, "Casa Vence": 50, "Visitante Vence": 50}
     
-    # Exemplo de lógica: se contiver o termo, aumenta a %
-    if "gol" in lista_texto or "over" in lista_texto: scores["O 1.5"] += 30
-    if "ataque" in lista_texto or "2.5" in lista_texto: scores["O 2.5"] += 35
-    if "defesa" in lista_texto or "ambas" in lista_texto: scores["BTTS"] += 40
+    if "gol" in lista_texto or "over 1" in lista_texto: scores["Over 1.5 FT"] += 35
+    if "2.5" in lista_texto: scores["Over 2.5 FT"] += 40
+    if "ambas" in lista_texto or "btts" in lista_texto: scores["BTTS"] += 45
     if "favorito" in lista_texto or "ltd" in lista_texto: scores["LTD"] += 30
+    if "casa" in lista_texto: scores["Casa Vence"] += 30
+    if "fora" in lista_texto or "visitante" in lista_texto: scores["Visitante Vence"] += 30
     
-    return pd.DataFrame(list(scores.values()), index=scores.keys(), columns=['Probabilidade (%)'])
+    return pd.DataFrame(list(scores.values()), index=scores.keys(), columns=['%'])
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
@@ -53,21 +53,18 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}", False):
-        st.write("### 📊 Análise por Probabilidade")
+        st.write("### 📊 Análise de Probabilidade")
         df = calcular_metricas_reais(lista)
         
-        # Gráfico Horizontal (usando o estilo do streamlit)
-        st.bar_chart(df)
+        # Lista vertical de mercados e probabilidades
+        for mercado_nome, row in df.iterrows():
+            st.write(f"**{mercado_nome}:** {row['%']}%")
         
-        melhor_mercado = df['Probabilidade (%)'].idxmax()
+        melhor_mercado = df['%'].idxmax()
         
-        c1, c2 = st.columns(2)
-        with c1:
-            st.write("### 🎯 Mercado Mais Forte")
-            st.info(f"✅ {melhor_mercado} com {df.loc[melhor_mercado].values[0]}%")
-        with c2:
-            st.write("### 📌 Palpite Sugerido")
-            st.success(f"🎯 Aposta: {melhor_mercado}")
+        st.write("---")
+        st.write(f"### 📌 Aposta Sugerida")
+        st.success(f"🎯 Mercado Mais Forte: {melhor_mercado} ({df.loc[melhor_mercado].values[0]}%)")
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
@@ -82,7 +79,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Intacta como solicitado)
+# Função Jogo C (Escanteios - Mantida intacta)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
