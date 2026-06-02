@@ -3,7 +3,7 @@ import requests
 import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brimport streamlit as st
+st.title("🤖 Sistema Brazukas Top Tips")
 import requests
 import streamlit.components.v1 as components
 
