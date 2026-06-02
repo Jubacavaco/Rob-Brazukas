@@ -4,7 +4,7 @@ import pandas as pd
 
 # Configuração da Página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Pro")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
@@ -55,21 +55,22 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht} | FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios) com suas regras
+# Função Jogo C (Escanteios) com regras específicas
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
-    med_casa = st.number_input("Média Casa", key="med_casa_c")
-    med_vis = st.number_input("Média Visitante", key="med_vis_c")
-    med_liga = st.number_input("Média Liga", key="med_liga_c")
+    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
+    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
+    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
     
-    e_casa_atual = st.number_input("Escanteios Casa (Atual)", key="e_casa_c")
-    e_vis_atual = st.number_input("Escanteios Fora (Atual)", key="e_vis_c")
-    total_esc = e_casa_atual + e_vis_atual
+    # Inputs como inteiros (sem casas decimais)
+    e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, format="%d", key="e_casa_c")
+    e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, format="%d", key="e_vis_c")
+    total_esc = int(e_casa_atual + e_vis_atual)
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"):
         st.session_state["analise_c"] = True
@@ -87,7 +88,11 @@ def jogo_c_escanteios():
 
         mid = st.session_state.get("mid_c")
         if mid:
-            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n\n📊 Stats:\nCasa: {e_casa_atual}\nVisitante: {e_vis_atual}\nTotal: {total_esc}"
+            base = (f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n\n"
+                    f"Cantos Casa: {int(e_casa_atual)}\n"
+                    f"Cantos Visitante: {int(e_vis_atual)}\n"
+                    f"Total: {total_esc}")
+            
             c1, c2 = st.columns(2)
             if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
