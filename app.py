@@ -9,44 +9,23 @@ TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
 def enviar_telegram(msg):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": CHAT_ID, "text": msg})
+    requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", json={"chat_id": CHAT_ID, "text": msg})
 
-# Gráfico mais elegante usando Chart.js com cores definidas
 def renderizar_grafico(dados):
-    labels = list(dados.keys())
-    valores = list(dados.values())
+    labels, valores = list(dados.keys()), list(dados.values())
     components.html(f"""
-    <div style="width: 100%; height: 250px;">
-        <canvas id="chart"></canvas>
-    </div>
+    <div style="height:250px;"><canvas id="chart"></canvas></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     new Chart(document.getElementById('chart'), {{
         type: 'bar',
-        data: {{
-            labels: {labels},
-            datasets: [{{
-                label: 'Probabilidade (%)',
-                data: {valores},
-                backgroundColor: '#3b82f6',
-                borderColor: '#2563eb',
-                borderWidth: 1,
-                borderRadius: 5
-            }}]
-        }},
-        options: {{
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {{ y: {{ max: 100, beginAtZero: true, ticks: {{ color: '#ccc' }} }}, x: {{ ticks: {{ color: '#ccc' }} }} }},
-            plugins: {{ legend: {{ labels: {{ color: '#fff' }} }} }}
-        }}
+        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#3b82f6', borderRadius: 5 }}] }},
+        options: {{ responsive: true, maintainAspectRatio: false, scales: {{ y: {{ max: 100, beginAtZero: true }} }} }}
     }});
     </script>
     """, height=280)
 
 def calcular_probabilidades(lista):
-    # Simulação dos cálculos que você pediu
     return {"BTTS": 61, "O1.5": 78, "O2.5": 52, "LTD": 70, "Casa": 65, "Vis": 15}
 
 def jogo_normal(nome):
@@ -56,42 +35,45 @@ def jogo_normal(nome):
         casa = st.text_input("Casa")
         visitante = st.text_input("Visitante")
         horario = st.text_input("Horário")
-        lista = st.text_area("Lista de Jogos (Dados)")
-        mercado = st.selectbox("Mercado para envio", ["BTTS", "OVER 1.5 FT", "OVER 2.5 FT", "LTD", "Casa vence", "Visitante"])
+        lista = st.text_area("Lista de Jogos")
+        mercado = st.selectbox("Mercado", ["BTTS", "OVER 1.5 FT", "OVER 2.5 FT", "LTD", "Casa vence", "Visitante"])
         
         btn_analisar = st.form_submit_button("📊 ANALISAR")
         btn_enviar = st.form_submit_button("🚀 ENVIAR ALERTA")
 
+    # Armazena resultados no session_state
     if btn_analisar:
         st.session_state[f"probs_{nome}"] = calcular_probabilidades(lista)
         st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario}
-        
+        st.rerun()
+
+    # Verifica se os dados existem antes de tentar exibir (Evita tela branca)
     if f"probs_{nome}" in st.session_state:
         probs = st.session_state[f"probs_{nome}"]
         d = st.session_state[f"dados_{nome}"]
         
-        # Visualização detalhada das % na tela
         cols = st.columns(3)
         for i, (m, p) in enumerate(probs.items()):
-            status = "🔥" if p >= 70 else "⚠️"
-            cols[i % 3].write(f"{status} **{m}**: {p}%")
-            
+            cols[i % 3].write(f"{'🔥' if p >= 70 else '⚠️'} **{m}**: {p}%")
         renderizar_grafico(probs)
 
-    if btn_enviar:
+    if btn_enviar and f"probs_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
         probs = st.session_state[f"probs_{nome}"]
-        msg = f"""🚨 Alerta de Cantos 🚨
-
-🏆 Campeonato: {d['camp']}
-🆚 Jogo: {d['casa']} x {d['vis']}
-🎯 Mercado: {mercado}
-📈 Probabilidade: {probs.get(mercado, 0)}%
-⏰ Horário: {d['horario']} (BR)
-
-🔞 Aposte com responsabilidade.
-⚠️ Não há garantias de lucro."""
+        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {mercado}\n📈 Probabilidade: {probs.get(mercado, 0)}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade."
         enviar_telegram(msg)
         st.success("Enviado!")
 
-# JOGO D e colunas permanecem iguais...
+# Jogo D e Layout seguem iguais...
+def jogo_d():
+    st.subheader("🏟️ JOGO_D (Escanteios)")
+    with st.form("JOGO_D"):
+        linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5])
+        btn_htg = st.form_submit_button("ENVIAR AÇÃO")
+    if btn_htg: enviar_telegram(f"JOGO D\nLinha: {linha}")
+
+col1, col2, col3, col4 = st.columns(4)
+with col1: jogo_normal("JOGO_A")
+with col2: jogo_normal("JOGO_B")
+with col3: jogo_normal("JOGO_C")
+with col4: jogo_d()
