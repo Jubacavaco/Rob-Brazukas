@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import requests
 import re
@@ -89,7 +88,7 @@ def calcular_probabilidade(texto):
     media_marcados = gols_marcados / total
     media_sofridos = gols_sofridos / total
 
-    # AJUSTES INTELIGENTES
+    # AJUSTES
     if media_marcados >= 2:
         p_over15 += 5
         p_over25 += 5
@@ -169,12 +168,17 @@ def renderizar_bloco(titulo):
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
         st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
+        st.progress(min(max(pltd/100, 0), 1), text=f"LTD: {pltd:.0f}%")
 
-        st.progress(min(max(pc/100, 0), 1),
-                    text=f"Vit. {casa if casa else 'Casa'}: {pc:.1f}%")
+        st.progress(
+            min(max(pc/100, 0), 1),
+            text=f"Vit. {casa if casa else 'Casa'}: {pc:.1f}%"
+        )
 
-        st.progress(min(max(pv/100, 0), 1),
-                    text=f"Vit. {vis if vis else 'Visitante'}: {pv:.1f}%")
+        st.progress(
+            min(max(pv/100, 0), 1),
+            text=f"Vit. {vis if vis else 'Visitante'}: {pv:.1f}%"
+        )
 
         tipo = st.selectbox(
             "Mercado",
@@ -188,7 +192,20 @@ def renderizar_bloco(titulo):
             key=f"sel_{titulo}"
         )
 
-        prob = prob_manual if prob_manual else f"{p25:.1f}"
+        if tipo == "Over 2.5 FT":
+            prob = f"{p25:.1f}"
+
+        elif tipo == "Over 1.5 FT":
+            prob = f"{p15:.1f}"
+
+        elif tipo == "Ambas Marcam (BTTS)":
+            prob = f"{pbtts:.1f}"
+
+        elif tipo == "LTD":
+            prob = f"{pltd:.1f}"
+
+        else:
+            prob = prob_manual if prob_manual else f"{p25:.1f}"
 
         msg_base = (
             f"🚨 *Alerta de Entrada* 🚨\n\n"
@@ -222,7 +239,7 @@ def renderizar_bloco(titulo):
                 st.success("Enviado!")
 
     # =========================
-    # BOTÕES DE STATUS
+    # BOTÕES STATUS
     # =========================
     if f"id_{titulo}" in st.session_state:
 
@@ -298,4 +315,3 @@ with col3:
 
 with col4:
     renderizar_bloco("JOGO_D")
-```
