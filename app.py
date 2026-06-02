@@ -42,7 +42,6 @@ def jogo_normal(nome):
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
             base = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)"
-            
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"):
                 telegram(f"{base}\nHT: ({ht})\n\n⚪ Em Andamento", mid)
@@ -53,8 +52,23 @@ def jogo_normal(nome):
             if c2.button("❌ RED", key=f"red_{nome}"):
                 telegram(f"{base}\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
 
-# (Função jogo_d segue a mesma lógica de formatação de placar)
-c1, c2, c3 = st.columns(3)
+def jogo_d():
+    st.subheader("🏟️ JOGO_D (Escanteios)")
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
+    if st.button("🚀 ENVIAR ALERTA", key="d_env"): 
+        st.session_state["mid_d"] = telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}")
+    
+    mid = st.session_state.get("mid_d")
+    if mid:
+        c1, c2 = st.columns(2)
+        if c1.button("⏱️ MOMENTO", key="d_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n⚪ Em Andamento", mid)
+        if c1.button("✅ HT", key="d_htg"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n✅✅✅", mid)
+        if c2.button("🏆 FINAL", key="d_fng"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🏆🏆🏆", mid)
+        if c2.button("❌ RED", key="d_fnr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n❌❌❌", mid)
+
+# Layout das 4 colunas restaurado
+c1, c2, c3, c4 = st.columns(4)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
 with c3: jogo_normal("JOGO_C")
+with c4: jogo_d()
