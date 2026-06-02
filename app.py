@@ -21,38 +21,36 @@ def renderizar_grafico(data, labels, titulo):
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     
-    # Campos de Entrada (Fixos na tela)
+    # Campos Fixos (sempre aparecem)
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
+    hora = st.text_input("Horário", key=f"h_{titulo}") # Horário restaurado em todos
     
     if titulo == "JOGO_D":
-        hora = st.text_input("Horário", key=f"h_{titulo}")
         med_time = st.number_input("Média Escanteios Time", key=f"mt_{titulo}")
         med_liga = st.number_input("Média Escanteios Liga", key=f"ml_{titulo}")
         linha = st.text_input("Linha de Escanteios", key=f"lin_{titulo}")
         
-        # O botão aqui apenas gatilha a análise
         if st.button("📊 ANALISAR JOGO D", key=f"bt_{titulo}"):
             st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "med_time": med_time, "med_liga": med_liga, "linha": linha}
     else:
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         prob = st.text_input("Probabilidade (%)", key=f"pb_{titulo}")
         mercado = st.text_input("Mercado", key=f"merc_{titulo}")
-        # Restaurado: Caixas de Placar
-        placar_ht = st.text_input("Placar HT", key=f"pht_{titulo}")
-        placar_final = st.text_input("Placar Final", key=f"pfin_{titulo}")
+        pht = st.text_input("Placar HT", key=f"pht_{titulo}") # Restaurado
+        pfin = st.text_input("Placar Final", key=f"pfin_{titulo}") # Restaurado
         
         if st.button("📊 ANALISAR", key=f"bt_{titulo}"):
-            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "lista": lista, "prob": prob, "mercado": mercado, "pht": placar_ht, "pfin": placar_final}
+            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "lista": lista, "prob": prob, "mercado": mercado, "pht": pht, "pfin": pfin}
 
-    # Área de Resultados (Aparece após o clique)
+    # Área de Resultados
     if f"dados_{titulo}" in st.session_state:
         st.write("---")
         st.success("Análise Ativa")
         renderizar_grafico([80, 60, 40], ['A', 'B', 'C'], titulo)
         if st.button("🚀 ENVIAR ALERTA", key=f"enviar_{titulo}"):
-            st.info("Alerta disparado para o Telegram!")
+            st.info("Alerta enviado!")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
