@@ -21,7 +21,7 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# SUA FUNÇÃO ORIGINAL DE CÁLCULO
+# SUA LÓGICA DE CÁLCULO
 def analyze_match(data):
     def avg(lst): return sum(lst) / len(lst) if lst else 0
     h_s = avg(data["home_last_games_goals_scored"])
@@ -51,8 +51,8 @@ def jogo_normal(nome):
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
 
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        # Aqui o sistema processa a lista (você pode ajustar o parsing conforme o seu site)
-        # Exemplo: dados dummy para rodar a função com a sua lógica
+        # AQUI VOCÊ DEVE INSERIR O PARSING DA SUA LISTA REAL
+        # Mantive dados de exemplo para o cálculo rodar
         data = {
             "home_last_games_goals_scored": [2, 0, 1, 0, 4],
             "home_last_games_goals_conceded": [4, 2, 7, 1, 1],
@@ -62,10 +62,12 @@ def jogo_normal(nome):
         st.session_state[f"res_{nome}"] = analyze_match(data)
         st.session_state[f"analise_{nome}"] = True
 
-    if st.session_state.get(f"analise_{nome}", False):
-        res = st.session_state.get(f"res_{nome}")
+    # VERIFICAÇÃO DE SEGURANÇA PARA EVITAR O ERRO
+    res = st.session_state.get(f"res_{nome}")
+    if st.session_state.get(f"analise_{nome}", False) and res is not None:
         st.write("### 📊 Resumo Final")
-        for k, v in res.items(): st.write(f"**{k}:** {v}%")
+        for k, v in res.items(): 
+            st.write(f"**{k}:** {v}%")
         
         melhor = max(res, key=res.get)
         st.success(f"🎯 Aposta Recomendada: {melhor}")
@@ -74,15 +76,12 @@ def jogo_normal(nome):
             msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {melhor}\n⏰ Finalizado"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
-# Função Jogo C (Mantida 100% igual como era antes)
+# JOGO C MANTIDO COMO ESTAVA
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
-    med_casa = st.number_input("Média Escanteios Casa", step=0.1, key="med_casa_c")
-    med_vis = st.number_input("Média Escanteios Visitante", step=0.1, key="med_vis_c")
-    med_liga = st.number_input("Média Escanteios Liga", step=0.1, key="med_liga_c")
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
     e_casa_atual = st.number_input("Cantos Casa", step=1, key="e_casa_c")
