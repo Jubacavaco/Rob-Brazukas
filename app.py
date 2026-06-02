@@ -17,43 +17,44 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-def calcular_probs(lista):
-    n = len(lista)
-    return {"O 1.5": 50+n, "O 2.5": 40+n, "BTTS": 30+n, "LTD": 20+n}
-
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
+    # Todas as caixas de entrada restauradas
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
     casa = st.text_input("Casa", key=f"casa_{nome}")
     vis = st.text_input("Visitante", key=f"vis_{nome}")
+    horario = st.text_input("Horário", key=f"hor_{nome}")
+    prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
+    ht = st.text_input("Placar HT", key=f"ht_{nome}")
+    ft = st.text_input("Placar FT", key=f"ft_{nome}")
     lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
     
+    # Botão Analisar
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
-        st.session_state[f"probs_{nome}"] = calcular_probs(lista)
+        # Calculo fictício baseado no tamanho da lista para variar os resultados
+        n = len(lista)
+        st.session_state[f"probs_{nome}"] = {"O 1.5": 50+n, "O 2.5": 40+n, "BTTS": 30+n, "LTD": 20+n}
 
-    # AQUI ESTÁ A CORREÇÃO: usamos .get() para não dar erro se a chave não existir ainda
+    # Verifica se a análise foi feita para mostrar o gráfico e botões
     if st.session_state.get(f"analise_{nome}", False):
-        p = st.session_state.get(f"probs_{nome}", {"O 1.5": 0, "O 2.5": 0, "BTTS": 0, "LTD": 0})
+        p = st.session_state.get(f"probs_{nome}")
         st.bar_chart(p)
-        st.write(f"✅ O 1.5: {p['O 1.5']}% | 🔥 LTD: {p['LTD']}%")
-        
-        ht = st.text_input("Placar HT", key=f"ht_{nome}")
-        ft = st.text_input("Placar FT", key=f"ft_{nome}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n📈 Prob: {p['O 1.5']}%"
+            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n📈 Prob: {prob}%\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
+            base = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n⏰ {horario}"
             c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\n\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\n✅✅✅", mid)
-            if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\nFT: ({ft})\n🏆🏆🏆", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"🏆 {casa} x {vis}\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
+            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\nHT: ({ht})\n\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\nHT: ({ht})\n✅✅✅", mid)
+            if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\nHT: ({ht})\nFT: ({ft})\n🏆🏆🏆", mid)
+            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
 
-# Layout com 4 colunas (A, B, C, D)
+# Colunas para os 4 jogos
 col1, col2, col3, col4 = st.columns(4)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
