@@ -4,7 +4,7 @@ import pandas as pd
 
 # Configuração da Página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Pro")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
@@ -97,4 +97,11 @@ def jogo_c_escanteios():
             c1, c2 = st.columns(2)
             if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key=f"c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
-            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_
+            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
+            if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
+
+# Layout Principal
+col1, col2, col3 = st.columns(3)
+with col1: jogo_normal("JOGO_A")
+with col2: jogo_normal("JOGO_B")
+with col3: jogo_c_escanteios()
