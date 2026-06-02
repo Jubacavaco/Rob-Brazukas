@@ -37,7 +37,6 @@ def renderizar_bloco(titulo):
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
-    prog = st.text_input("Prognóstico", key=f"pr_{titulo}")
     prob = st.text_input("Probabilidade", key=f"pb_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
     pm = st.text_input("Momento", key=f"pm_{titulo}")
@@ -68,7 +67,6 @@ def renderizar_bloco(titulo):
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
                f"🎯 Mercado: {tipo}\n"
-               f"💥 Prognóstico: {prog}\n"
                f"📈 Probabilidade: {prob}\n"
                f"⏰ Horário: {hora}\n\n\n"
                f"🔞 Aposte com responsabilidade.\n"
