@@ -1,7 +1,5 @@
 import streamlit as st
 import requests
-import re
-import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
@@ -10,72 +8,64 @@ TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 RODAPE = "\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
 
-def renderizar_grafico(data, labels):
-    components.html(f"""
-    <div style="background:#1e293b; padding:10px; border-radius:8px;"><canvas id="cChart"></canvas></div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        new Chart(document.getElementById('cChart'), {{
-            type: 'bar',
-            data: {{ labels: {labels}, datasets: [{{ data: {data}, backgroundColor: '#3b82f6', borderRadius: 6 }}] }},
-            options: {{ plugins: {{ legend: {{ display: false }} }}, scales: {{ y: {{ beginAtZero: true, max: 100, ticks: {{ color: 'white' }} }} }} }}
-        }});
-    </script>
-    """, height=220)
+# Função para enviar/editar no Telegram
+def telegram_api(method, data):
+    return requests.post(f"https://api.telegram.org/bot{TOKEN}/{method}", data=data).json()
 
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
     
-    # Inputs diretos para que o botão ANALISAR funcione sem travar
+    # Inputs (Armazenados no session_state para não apagar)
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     
     if titulo == "JOGO_D":
-        hora = st.text_input("Horário", key=f"h_{titulo}")
-        cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
-        cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
-        ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
-        linha = st.text_input("Linha de Canto (Ex: 8.5)", key=f"lin_{titulo}")
+        hora, cc, cv = st.text_input("Horário", key=f"h_{titulo}"), st.number_input("Cantos Casa", key=f"cc_{titulo}"), st.number_input("Cantos Vis", key=f"cv_{titulo}")
+        ou, linha, ent = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}"), st.text_input("Linha Canto", key=f"lin_{titulo}"), st.text_input("Entrada", key=f"en_{titulo}")
         
         if st.button("📊 ANALISAR JOGO D", key=f"an_{titulo}"):
             st.session_state[f"ativo_{titulo}"] = True
-            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis, "hora": hora, "cc": cc, "cv": cv, "ou": ou, "linha": linha}
-    else:
+            
+        if st.session_state.get(f"ativo_{titulo}"):
+            st.write(f"💡 **Recomendação:** {ou} {linha} (Cantos)")
+            if st.button("🚀 ENVIAR ALERTA", key=f"bt_enviar_{titulo}"):
+                msg = f"🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos ({ou} {linha})\n💎 Entrada: {ent}\n🕒 Horário: {hora}\n{RODAPE}"
+                res = telegram_api("sendMessage", {"chat_id": CHAT_ID, "text": msg})
+                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
+
+        if f"id_{titulo}" in st.session_state:
+            def ed_d(status):
+                info = f"\n\n---\n🏠 Casa: {int(cc)}\n✈️ Vis: {int(cv)}\n📊 Total: {int(cc+cv)}"
+                txt = f"{st.session_state[f'msg_{titulo}'].replace(RODAPE, '')}{info}\n\n{status}\n{RODAPE}"
+                telegram_api("editMessageText", {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": txt})
+            c1, c2, c3, c4 = st.columns(4)
+            if c1.button("MOMENTO", key=f"m_{titulo}"): ed_d("INFO")
+            if c2.button("HT", key=f"ht_{titulo}"): ed_d("✅ GREEN HT ✅")
+            if c3.button("HT 2", key=f"ht2_{titulo}"): ed_d("❌ RED HT ❌")
+            if c4.button("FINAL", key=f"fin_{titulo}"): ed_d("✅ GREEN FINAL ✅")
+
+    else: # Jogos A, B, C
         lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         if st.button("📊 ANALISAR", key=f"an_{titulo}"):
             st.session_state[f"ativo_{titulo}"] = True
-            st.session_state[f"dados_{titulo}"] = {"camp": camp, "casa": casa, "vis": vis}
-
-    # Bloco de resultados (aparece apenas após clicar em analisar)
-    if st.session_state.get(f"ativo_{titulo}"):
-        d = st.session_state[f"dados_{titulo}"]
-        
-        if titulo == "JOGO_D":
-            st.write(f"💡 **Recomendação:** {d['ou']} {d['linha']} (Cantos)")
-            renderizar_grafico([82, 73, 61, 49], ['7.5', '8.5', '9.5', '10.5'])
-            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
-                msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 {d['camp']}\n⚔️ {d['casa']} x {d['vis']}\n🎯 Mercado: {d['ou']} {d['linha']}\n🕒 {d['hora']} (BR){RODAPE}"
-                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-                if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
+            
+        if st.session_state.get(f"ativo_{titulo}"):
+            st.write("🔥 **Mercado Pegando Fogo: 90%**")
+            if st.button("🚀 ENVIAR ALERTA", key=f"bt_enviar_{titulo}"):
+                msg = f"🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Over Gols\n💎 Entrada: O1.5 FT\n🕒 Horário: 15:00\n{RODAPE}"
+                res = telegram_api("sendMessage", {"chat_id": CHAT_ID, "text": msg})
+                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
             
             if f"id_{titulo}" in st.session_state:
-                def ed(status):
-                    info = f"\n\n--------------------\n🏠 Casa: {int(d['cc'])}\n✈️ Vis: {int(d['cv'])}\n📊 Total: {int(d['cc']+d['cv'])}"
-                    txt = f"{st.session_state[f'msg_{titulo}'].replace(RODAPE, '')}{info}\n\n{status if status != 'INFO' else ''}{RODAPE}"
-                    requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f'id_{titulo}'], "text": txt})
+                def ed_abc(status, txt_extra):
+                    txt = f"{st.session_state[f'msg_{titulo}'].replace(RODAPE, '')}\n\n---\n⚽ {txt_extra}\n\n{status}\n{RODAPE}"
+                    telegram_api("editMessageText", {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": txt})
                 c1, c2, c3, c4 = st.columns(4)
-                if c1.button("MOMENTO", key=f"m_{titulo}"): ed("INFO")
-                if c2.button("HT", key=f"ht_{titulo}"): ed("✅ GREEN HT ✅")
-                if c3.button("HT 2", key=f"ht2_{titulo}"): ed("❌ RED HT ❌")
-                if c4.button("FINAL", key=f"fin_{titulo}"): ed("✅ GREEN FINAL ✅")
-        else:
-            st.write("📊 Probabilidades calculadas.")
-            renderizar_grafico([90, 85, 70], ['O1.5', 'O2.5', 'BTTS'])
-            if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
-                msg = f"🚨 Alerta {titulo} 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n📈 Probs: 90% | 85%{RODAPE}"
-                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                if c1.button("MOMENTO", key=f"m_{titulo}"): ed_abc("INFO", "Jogo em andamento")
+                if c2.button("HT", key=f"ht_{titulo}"): ed_abc("⚪ EM ANDAMENTO ⚪", "HT: Ok")
+                if c3.button("FINAL", key=f"f_{titulo}"): ed_abc("✅ GREEN GIGANTE ✅", "Final: Green")
+                if c4.button("RED", key=f"r_{titulo}"): ed_abc("❌ RED ❌", "Final: Red")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
