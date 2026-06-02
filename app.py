@@ -43,12 +43,12 @@ def jogo_normal(nome):
         st.bar_chart(pd.DataFrame({'%': [85, 60, 75, 40]}, index=["O 1.5", "O 2.5", "BTTS", "LTD"]))
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
         mid = st.session_state.get(f"mid_{nome}")
         if mid:
-            base = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {mercado}\n💥 {prog_str}\n📈 {prob}%\n⏰ {horario}"
+            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {mercado}\n💥 {prog_str}\n📈 {prob}%\n⏰ {horario}"
             c1, c2 = st.columns(2)
             if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
@@ -67,7 +67,6 @@ def jogo_c_escanteios():
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
     
-    # Inputs dinâmicos de escanteios atuais
     e_casa_atual = st.number_input("Escanteios Casa (Atual)", key="e_casa_c")
     e_vis_atual = st.number_input("Escanteios Fora (Atual)", key="e_vis_c")
     total_esc = e_casa_atual + e_vis_atual
@@ -83,12 +82,12 @@ def jogo_c_escanteios():
         conf = st.slider("Porcentagem de Confiança", 0, 100, 70, key="conf_c")
         
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            msg = f"🚨 Alerta Escanteios 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n📈 Confiança: {conf}%"
+            msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n📈 Confiança: {conf}%"
             st.session_state["mid_c"] = telegram(msg)
 
         mid = st.session_state.get("mid_c")
         if mid:
-            base = f"🚨 Alerta Escanteios 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n\n📊 Stats: C:{e_casa_atual} F:{e_vis_atual} | Total: {total_esc}"
+            base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha} FT\n\n📊 Stats:\nCasa: {e_casa_atual}\nVisitante: {e_vis_atual}\nTotal: {total_esc}"
             c1, c2 = st.columns(2)
             if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
@@ -100,5 +99,3 @@ col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_c_escanteios()
-
-
