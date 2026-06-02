@@ -4,7 +4,7 @@ import pandas as pd
 
 # Configuração da Página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Top Tips")
+st.title("🤖 Sistema Brazukas Pro")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
@@ -50,12 +50,12 @@ def jogo_normal(nome):
         if mid:
             base = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {mercado}\n💥 {prog_str}\n📈 {prob}%\n⏰ {horario}"
             c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
+            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\n✅✅✅ GREEN ✅✅✅", mid)
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht} | FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar: {ft}\n❌❌❌ RED ❌❌❌", mid)
+            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht} | FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios) com regras específicas
+# Função Jogo C (Escanteios)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -67,7 +67,6 @@ def jogo_c_escanteios():
     ht_c = st.text_input("Placar HT", key="ht_c")
     ft_c = st.text_input("Placar FT", key="ft_c")
     
-    # Inputs como inteiros (sem casas decimais)
     e_casa_atual = st.number_input("Cantos Casa (Atual)", step=1, format="%d", key="e_casa_c")
     e_vis_atual = st.number_input("Cantos Fora (Atual)", step=1, format="%d", key="e_vis_c")
     total_esc = int(e_casa_atual + e_vis_atual)
@@ -94,10 +93,10 @@ def jogo_c_escanteios():
                     f"Total: {total_esc}")
             
             c1, c2 = st.columns(2)
-            if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\n⚪ Em Andamento", mid)
+            if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
             if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
-            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar Final: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
-            if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar Final: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
+            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c} | FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
+            if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c} | FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
 
 # Layout Principal
 col1, col2, col3 = st.columns(3)
