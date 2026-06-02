@@ -62,8 +62,21 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL GREEN", key=f"fng_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\nHT: {d['ht']}\n🏆 FINAL GREEN! {d['ft']}", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\nHT: {d['ht']}\n❌ RED! {d['ft']}", mid)
 
-c1, c2, c3 = st.columns(3)
+def jogo_d():
+    st.subheader("🏟️ JOGO_D (Escanteios)")
+    linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_d")
+    if st.button("🚀 ENVIAR ALERTA", key="d_env"): 
+        st.session_state["mid_d"] = telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}")
+    
+    mid = st.session_state.get("mid_d")
+    if mid:
+        if st.button("⏱️ MOMENTO", key="d_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🟢 Em Andamento", mid)
+        if st.button("✅ HT GREEN", key="d_htg"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n✅ HT GREEN!", mid)
+        if st.button("🏆 FINAL GREEN", key="d_fng"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n🏆 FINAL GREEN!", mid)
+        if st.button("❌ RED", key="d_fnr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🏟️ JOGO D\n🎯 Linha: {linha}\n❌ RED!", mid)
+
+c1, c2, c3, c4 = st.columns(4)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
 with c3: jogo_normal("JOGO_C")
-    
+with c4: jogo_d()
