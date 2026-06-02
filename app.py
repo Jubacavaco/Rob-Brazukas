@@ -5,7 +5,6 @@ import re
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
 
-# Certifique-se de que isso esteja preenchido nos Secrets
 TOKEN = st.secrets.get("TOKEN", "")
 CHAT_ID = st.secrets.get("CHAT_ID", "")
 
@@ -50,62 +49,38 @@ def renderizar_bloco(titulo):
 
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
+        
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
         st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
         st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
+        st.write("🔥 **Mercados Fortes:**")
+        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
+        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
+        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
+        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
+        
         tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-        secundario = st.text_input("Mercado Secundário (Cantos)", key=f"sec_{titulo}")
         
         msg = (f"🚨 *ALERTA DE ENTRADA*\n\n"
                f"🏆 *Campeonato:* {camp}\n"
                f"⚽ *Jogo:* {casa} x {vis}\n"
-               f"🎯 *Mercado Principal:* {tipo}\n"
-               f"📈 *Mercado Secundário:* {secundario}\n"
+               f"🎯 *Mercado:* {tipo}\n"
                f"⏰ *Horário:* {hora}")
         
         st.info(msg)
         
         if st.button("🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}"):
-            if not TOKEN or not CHAT_ID:
-                st.error("Erro: TOKEN ou CHAT_ID não configurados nos Secrets!")
-                return
-            
             url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
             payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
-            
-            try:
-                r = requests.post(url, data=payload)
-                data = r.json()
-                if data.get("ok"):
-                    st.session_state[f"id_{titulo}"] = data["result"]["message_id"]
-                    st.session_state[f"msg_{titulo}"] = msg
-                    st.success("Enviado!")
-                else:
-                    st.error(f"Erro Telegram: {data.get('description')}")
-            except Exception as e:
-                st.error(f"Erro na conexão: {e}")
+            r = requests.post(url, data=payload)
+            if r.json().get("ok"):
+                st.session_state[f"id_{titulo}"] = r.json()["result"]["message_id"]
+                st.session_state[f"msg_{titulo}"] = msg
+                st.success("Enviado!")
 
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
             url = f"https://api.telegram.org/bot{TOKEN}/editMessageText"
-            payload = {
-                "chat_id": CHAT_ID, 
-                "message_id": st.session_state[f"id_{titulo}"], 
-                "text": f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}",
-                "parse_mode": "Markdown"
-            }
-            requests.post(url, data=payload)
-        
-        c1, c2, c3, c4 = st.columns(4)
-        if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
-        if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
-        if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
-        if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
-
-col1, col2, col3, col4 = st.columns(4)
-with col1: renderizar_bloco("JOGO_A")
-with col2: renderizar_bloco("JOGO_B")
-with col3: renderizar_bloco("JOGO_C")
-with col4: renderizar_bloco("JOGO_D")
+            payload = {"
