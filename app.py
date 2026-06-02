@@ -2,6 +2,19 @@ import streamlit as st
 import requests
 import re
 
+from supabase import create_client
+
+# =========================
+# SUPABASE
+# =========================
+supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_KEY"]
+)
+
+# =========================
+# CONFIG
+# =========================
 st.set_page_config(layout="wide", page_title="Sistema Brazukas 4 Jogos")
 st.title("🤖 Sistema Brazukas Top Tips (4 Jogos)")
 
@@ -9,7 +22,38 @@ TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
 
 # =========================
-# LÓGICA ESTATÍSTICA FLASHSCORE
+# SALVAR NO BANCO
+# =========================
+def salvar_analise(
+    jogo,
+    campeonato,
+    mercado,
+    probabilidade,
+    horario,
+    lista_jogos,
+    message_id="",
+    status="",
+    placar_ht="",
+    placar_final=""
+):
+
+    dados = {
+        "jogo": jogo,
+        "campeonato": campeonato,
+        "mercado": mercado,
+        "probabilidade": probabilidade,
+        "horario": horario,
+        "lista_jogos": lista_jogos,
+        "message_id": str(message_id),
+        "status": status,
+        "placar_ht": placar_ht,
+        "placar_final": placar_final
+    }
+
+    supabase.table("analises").insert(dados).execute()
+
+# =========================
+# CALCULAR PROBABILIDADE
 # =========================
 def calcular_probabilidade(texto):
 
@@ -21,7 +65,6 @@ def calcular_probabilidade(texto):
 
         valor = int(n)
 
-        # IGNORA DATAS
         if valor <= 10:
             gols.append(valor)
 
@@ -47,23 +90,18 @@ def calcular_probabilidade(texto):
 
         total_gols = g1 + g2
 
-        # OVER 1.5
         if total_gols >= 2:
             over15 += 1
 
-        # OVER 2.5
         if total_gols >= 3:
             over25 += 1
 
-        # BTTS
         if g1 > 0 and g2 > 0:
             btts += 1
 
-        # LTD
         if g1 != g2:
             ltd += 1
 
-        # RESULTADOS
         if g1 > g2:
             vitoria_casa += 1
 
@@ -78,7 +116,6 @@ def calcular_probabilidade(texto):
     if total == 0:
         return 50, 50, 0, 0, 0, 0, 0
 
-    # PORCENTAGENS
     p_over15 = (over15 / total) * 100
     p_over25 = (over25 / total) * 100
     p_btts = (btts / total) * 100
@@ -88,7 +125,6 @@ def calcular_probabilidade(texto):
     p_visitante = (vitoria_visitante / total) * 100
     p_empate = (empate / total) * 100
 
-    # AJUSTE INTELIGENTE
     media_gols = (
         (p_over15 * 0.4) +
         (p_over25 * 0.4) +
@@ -98,7 +134,6 @@ def calcular_probabilidade(texto):
     p_over15 += media_gols * 10
     p_over25 += media_gols * 5
 
-    # LIMITES
     p_over15 = min(round(p_over15, 1), 95)
     p_over25 = min(round(p_over25, 1), 90)
     p_btts = min(round(p_btts, 1), 85)
@@ -115,7 +150,7 @@ def calcular_probabilidade(texto):
     )
 
 # =========================
-# SUGESTÃO DE MERCADO
+# SUGESTÃO
 # =========================
 def obter_sugestao(p15, p25, pbtts, pltd):
 
@@ -146,7 +181,6 @@ def renderizar_bloco(titulo):
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
 
-    # PROBABILIDADE MANUAL
     prob_manual = st.text_input(
         "Probabilidade Manual (%)",
         key=f"pr_{titulo}"
@@ -158,12 +192,16 @@ def renderizar_bloco(titulo):
 
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
 
+    # =========================
     # ANALISAR
+    # =========================
     if st.button("Analisar", key=f"an_{titulo}"):
 
         st.session_state[f"probs_{titulo}"] = calcular_probabilidade(lista)
 
+    # =========================
     # RESULTADOS
+    # =========================
     if f"probs_{titulo}" in st.session_state:
 
         pc, pv, pe, p15, p25, pbtts, pltd = st.session_state[f"probs_{titulo}"]
@@ -173,7 +211,6 @@ def renderizar_bloco(titulo):
         if sugestao != "Nenhum mercado recomendado":
             st.success(f"🎯 Sugestão: {sugestao}")
 
-        # BARRAS
         st.progress(min(max(p25/100, 0), 1), text=f"O2.5: {p25:.0f}%")
         st.progress(min(max(p15/100, 0), 1), text=f"O1.5: {p15:.0f}%")
         st.progress(min(max(pbtts/100, 0), 1), text=f"BTTS: {pbtts:.0f}%")
@@ -189,7 +226,6 @@ def renderizar_bloco(titulo):
             text=f"Vitória {vis if vis else 'Visitante'}: {pv:.0f}%"
         )
 
-        # MERCADO
         tipo = st.selectbox(
             "Mercado",
             [
@@ -202,10 +238,8 @@ def renderizar_bloco(titulo):
             key=f"sel_{titulo}"
         )
 
-        # % MANUAL
         prob = prob_manual if prob_manual else "0"
 
-        # MSG TELEGRAM
         msg_base = (
             f"🚨 Alerta de Entrada 🚨\n\n"
             f"🏆 Campeonato: {camp}\n"
@@ -238,52 +272,7 @@ def renderizar_bloco(titulo):
         st.markdown(resumo)
 
         # =========================
-        # MERCADOS MAIS FORTES
-        # =========================
-        st.write("## 🎯 Mercados Mais Fortes")
-
-        if p15 >= 75:
-            st.write("✅ Over 1.5 FT — Muito Forte")
-
-        if p25 >= 65:
-            st.write("🔥 Over 2.5 FT — Forte")
-
-        elif p25 >= 50:
-            st.write("⚠️ Over 2.5 FT — Moderado")
-
-        if pbtts >= 60:
-            st.write("🔥 BTTS — Forte")
-
-        elif pbtts >= 45:
-            st.write("⚠️ BTTS — Moderado/Baixo")
-
-        if pltd >= 80:
-            st.write("🔥 LTD (Sem Empate) — Muito Forte")
-
-        # =========================
-        # PLACARES COMPATÍVEIS
-        # =========================
-        st.write("## 📌 Placares Compatíveis")
-
-        placares = []
-
-        if p15 >= 70 and pbtts < 50:
-            placares = ["2x0", "2x1", "1x0", "1x1"]
-
-        elif p25 >= 65 and pbtts >= 55:
-            placares = ["2x1", "3x1", "2x2"]
-
-        elif pbtts >= 60:
-            placares = ["1x1", "2x1"]
-
-        else:
-            placares = ["1x0", "2x0"]
-
-        for placar in placares:
-            st.write(f"• {placar}")
-
-        # =========================
-        # BOTÃO ENVIAR
+        # ENVIAR TELEGRAM
         # =========================
         if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
 
@@ -297,13 +286,29 @@ def renderizar_bloco(titulo):
 
             if res.get("ok"):
 
-                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
+                msg_id = res["result"]["message_id"]
+
+                st.session_state[f"id_{titulo}"] = msg_id
                 st.session_state[f"msg_base_{titulo}"] = msg_base
 
-                st.success("Mensagem enviada!")
+                # SALVAR NO SUPABASE
+                salvar_analise(
+                    jogo=f"{casa} x {vis}",
+                    campeonato=camp,
+                    mercado=tipo,
+                    probabilidade=prob,
+                    horario=hora,
+                    lista_jogos=lista,
+                    message_id=msg_id,
+                    status="ENVIADO",
+                    placar_ht=pht,
+                    placar_final=pf
+                )
+
+                st.success("Mensagem enviada e salva!")
 
     # =========================
-    # STATUS TELEGRAM
+    # BOTÕES STATUS
     # =========================
     if f"id_{titulo}" in st.session_state:
 
@@ -357,7 +362,7 @@ def renderizar_bloco(titulo):
             atualizar_telegram("RED 🔴❌", "FINAL")
 
 # =========================
-# 4 COLUNAS
+# COLUNAS
 # =========================
 col1, col2, col3, col4 = st.columns(4)
 
