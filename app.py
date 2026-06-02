@@ -28,7 +28,6 @@ def renderizar_grafico(dados):
     """, height=250)
 
 def calcular_probabilidades(lista):
-    # Lógica de processamento da lista de jogos
     return {
         "BTTS": 75,
         "OVER 1.5": 82,
@@ -63,8 +62,8 @@ def jogo_normal(nome):
     if btn_enviar:
         probs = st.session_state.get(f"probs_{nome}", {"Erro": 0})
         status = "🔥 MERCADO PEGANDO FOGO" if probs.get(mercado, 0) >= 70 else "⚠️ Mercado estável"
-        # HT e FT removidos da mensagem conforme solicitado
-        msg = f"{nome}\n⚔️ {casa} x {visitante}\n🕒 {horário}\n🎯 Mercado: {mercado}\n📊 Probabilidade: {probs.get(mercado, 0)}%\n{status}"
+        # Variável corrigida para 'horario'
+        msg = f"{nome}\n⚔️ {casa} x {visitante}\n🕒 {horario}\n🎯 Mercado: {mercado}\n📊 Probabilidade: {probs.get(mercado, 0)}%\n{status}"
         enviar_telegram(msg)
         st.success("Enviado com sucesso!")
 
