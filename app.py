@@ -50,12 +50,9 @@ def jogo_normal(nome):
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
     
-    # LISTA DE ANÁLISE RESTAURADA
     lista = st.text_area("Lista de Análise (Cole os números ex: 2,0,1,0,4)", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        # Simulação de parsing da lista (se precisar de mais complexidade, ajuste aqui)
-        # Assumindo que a lista enviada tenha 20 números (5 de cada categoria)
         nums = [int(n) for n in lista.replace(' ', '').split(',') if n.isdigit()]
         if len(nums) >= 20:
             data = {
@@ -69,7 +66,8 @@ def jogo_normal(nome):
         else:
             st.error("Por favor, cole 20 números separados por vírgula!")
 
-    if st.session_state.get(f"analise_{nome}", False):
+    # Verificação de segurança para evitar o erro KeyError
+    if st.session_state.get(f"analise_{nome}", False) and f"res_{nome}" in st.session_state:
         res = st.session_state[f"res_{nome}"]
         st.write("### 📊 Resumo Final")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
@@ -81,7 +79,6 @@ def jogo_normal(nome):
             msg = f"🚨 Alerta 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {melhor}\n⏰ {horario}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
 
-# Função Jogo C (Intacta)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
