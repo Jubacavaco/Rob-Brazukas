@@ -179,7 +179,7 @@ with col3:
     jogo_normal("JOGO_C")
 
 with col4:
-    jogo_d()azukas Top Tips")
+    jogo_d()
 
 def renderizar_grafico(data, labels, titulo):
     components.html(f"""
