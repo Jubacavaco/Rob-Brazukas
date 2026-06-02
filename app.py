@@ -40,59 +40,46 @@ def renderizar_bloco(titulo):
         casa = st.text_input("Casa", key=f"ca_{titulo}")
         vis = st.text_input("Visitante", key=f"v_{titulo}")
         hora = st.text_input("Horário", key=f"h_{titulo}")
-        media_time = st.number_input("Média Time (C+V)", key=f"mt_{titulo}")
+        media_time = st.number_input("Média Time", key=f"mt_{titulo}")
         media_liga = st.number_input("Média Liga", key=f"ml_{titulo}")
         cc = st.number_input("Cantos Casa", key=f"cc_{titulo}")
         cv = st.number_input("Cantos Vis", key=f"cv_{titulo}")
         ou = st.selectbox("Selecione", ["Over", "Under"], key=f"ou_{titulo}")
-        entrada = st.text_input("Linha (Ex: 8.5)", key=f"e_{titulo}")
+        entrada = st.text_input("Entrada", key=f"e_{titulo}")
         
         if st.button("📊 ANALISAR", key=f"an_{titulo}"):
-            media_final = (media_time + media_liga) / 2
-            sugestao = "Over" if media_time > media_liga else "Under"
-            st.write(f"💡 **Recomendação:** {sugestao} (Linha base: {media_final:.1f})")
-            
-            def calc_prob(limite): return int(max(min(100 - abs(limite - media_final) * 12, 95), 5))
-            p = [calc_prob(7.5), calc_prob(8.5), calc_prob(9.5), calc_prob(10.5)]
-            
-            components.html(f"""
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <div style="width:100%; background:#1e293b; padding:15px; border-radius:15px;">
-                <canvas id="cChart"></canvas>
-            </div>
-            <script>
-                new Chart(document.getElementById('cChart'), {{
-                    type: 'bar',
-                    data: {{
-                        labels: ['7.5', '8.5', '9.5', '10.5'],
-                        datasets: [{{ data: {p}, backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'], borderRadius: 8 }}]
-                    }},
-                    options: {{ plugins: {{ legend: {{ display: false }} }}, scales: {{ y: {{ beginAtZero: true, max: 100, ticks: {{ color: 'white' }} }} }} }}
-                }});
-            </script>
-            """, height=300)
+            media_calc = (media_time + media_liga) / 2
+            media_final = round(media_calc * 2) / 2 # Garante final .0 ou .5
+            st.session_state[f"media_final_{titulo}"] = media_final
+            st.write(f"Média Calculada: {media_final:.1f}")
+            p = [82, 73, 61, 49] # Exemplo de probabilidade
+            components.html(f"""<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><canvas id="cChart"></canvas><script>new Chart(document.getElementById('cChart'), {{type: 'bar', data: {{labels: ['7.5', '8.5', '9.5', '10.5'], datasets: [{{data: {p}, backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444']}}]}}}});</script>""", height=250)
             st.session_state[f"analise_{titulo}"] = True
-            st.session_state[f"rec_{titulo}"] = sugestao
-
-        if st.session_state.get(f"analise_{titulo}"):
-            if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
-                msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n\n🏆 {camp}\n⚔️ {casa} x {vis}\n🎯 Mercado: {st.session_state[f'rec_{titulo}']} {entrada}\n💎 Entrada: {entrada}\n🕒 {hora} (BR)"
-                res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
-                if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
         
+        if st.button("🚀 ENVIAR ALERTA", key=f"en_{titulo}"):
+            msg = f"🚨🔥 ALERTA DE CANTOS 🔥🚨\n🏆 Campeonato: {camp}\n⚔️ Confronto: {casa} x {vis}\n🎯 Mercado: Cantos Asiáticos ({ou} {entrada})\n💎 Entrada: {entrada}\n🕒 Horário: {hora} (BR)"
+            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
+            if res.get("ok"): st.session_state[f"id_{titulo}"] = res["result"]["message_id"]; st.session_state[f"msg_{titulo}"] = msg
+            
         if f"id_{titulo}" in st.session_state:
-            def editar(status):
-                new = f"{st.session_state[f'msg_{titulo}']}\n\n🏠 Casa: {int(cc)} | ✈️ Vis: {int(cv)} | 📊 Total: {int(cc + cv)}\n\n{status}"
-                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new})
+            def ed(status):
+                txt = f"{st.session_state[f'msg_{titulo}']}\n\n🏠 Cantos Casa: {int(cc)}\n✈️ Cantos Visitante: {int(cv)}\n📊 Total de Cantos: {int(cc+cv)}\n\n{status}"
+                requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f'id_{titulo}'], "text": txt})
             c1, c2, c3, c4 = st.columns(4)
-            if c1.button("MOMENTO", key=f"mom_{titulo}"): editar("✅ GREEN ✅")
-            if c2.button("HT", key=f"ht_{titulo}"): editar("✅ GREEN HT ✅")
-            if c3.button("HT 2", key=f"ht2_{titulo}"): editar("❌ RED HT ❌")
-            if c4.button("FINAL", key=f"fin_{titulo}"): editar("✅ GREEN FINAL ✅")
+            if c1.button("MOMENTO", key=f"mom_{titulo}"): ed("✅ GREEN ✅")
+            if c2.button("HT", key=f"ht_{titulo}"): ed("✅ GREEN HT ✅")
+            if c3.button("HT 2", key=f"ht2_{titulo}"): ed("❌ RED HT ❌")
+            if c4.button("FINAL", key=f"fin_{titulo}"): ed("✅ GREEN FINAL ✅")
     else:
-        camp, casa, vis = st.text_input("Campeonato", key=f"c_{titulo}"), st.text_input("Casa", key=f"ca_{titulo}"), st.text_input("Visitante", key=f"v_{titulo}")
-        prob, hora, pm = st.text_input("Probabilidade", key=f"pb_{titulo}"), st.text_input("Horário", key=f"h_{titulo}"), st.text_input("Momento", key=f"pm_{titulo}")
-        pht, pf, lista = st.text_input("HT", key=f"pht_{titulo}"), st.text_input("Final", key=f"pf_{titulo}"), st.text_area("Lista de jogos", key=f"l_{titulo}")
+        camp = st.text_input("Campeonato", key=f"c_{titulo}")
+        casa = st.text_input("Casa", key=f"ca_{titulo}")
+        vis = st.text_input("Visitante", key=f"v_{titulo}")
+        prob = st.text_input("Probabilidade", key=f"pb_{titulo}")
+        hora = st.text_input("Horário", key=f"h_{titulo}")
+        pm = st.text_input("Momento", key=f"pm_{titulo}")
+        pht = st.text_input("HT", key=f"pht_{titulo}")
+        pf = st.text_input("Final", key=f"pf_{titulo}")
+        lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
         if st.button("Analisar", key=f"an_{titulo}"): st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
         if f"res_{titulo}" in st.session_state:
             tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
