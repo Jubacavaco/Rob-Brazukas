@@ -61,7 +61,7 @@ def calcular_probabilidade(texto):
             if g1 != g2:
                 ltd += 1
 
-            # RESULTADO
+            # RESULTADOS
             if g1 > g2:
                 vitoria_casa += 1
 
@@ -220,6 +220,80 @@ def renderizar_bloco(titulo):
 
         st.info(f"Prévia:\n{msg_base}")
 
+        # =========================
+        # RESUMO FINAL
+        # =========================
+
+        st.write("### 📊 Resumo Final")
+
+        resumo = f"""
+| Mercado | Probabilidade |
+|---|---|
+| ✅ Over 1.5 FT | {p15:.0f}% |
+| ⚠️ Over 2.5 FT | {p25:.0f}% |
+| ⚠️ Ambas Marcam (BTTS) | {pbtts:.0f}% |
+| 🔥 LTD (Sem Empate) | {pltd:.0f}% |
+| 🟦 Vitória {casa if casa else 'Casa'} | {pc:.0f}% |
+| 🟥 Vitória {vis if vis else 'Visitante'} | {pv:.0f}% |
+| 🤝 Empate | {pe:.0f}% |
+"""
+
+        st.markdown(resumo)
+
+        # =========================
+        # MERCADOS MAIS FORTES
+        # =========================
+
+        st.write("### 🎯 Mercados Mais Fortes")
+
+        mercados = []
+
+        if p15 >= 75:
+            mercados.append("✅ Over 1.5 FT — Muito Forte")
+
+        if p25 >= 65:
+            mercados.append("🔥 Over 2.5 FT — Forte")
+        elif p25 >= 50:
+            mercados.append("⚠️ Over 2.5 FT — Moderado")
+
+        if pbtts >= 60:
+            mercados.append("🔥 BTTS — Forte")
+        elif pbtts >= 45:
+            mercados.append("⚠️ BTTS — Moderado")
+
+        if pltd >= 80:
+            mercados.append("🔥 LTD (Sem Empate) — Muito Forte")
+
+        for m in mercados:
+            st.write(m)
+
+        # =========================
+        # PLACARES COMPATÍVEIS
+        # =========================
+
+        st.write("### 📌 Placares Compatíveis")
+
+        placares = []
+
+        if p15 >= 70 and pbtts < 50:
+            placares = ["2x0", "1x0", "2x1", "1x1"]
+
+        elif p25 >= 65 and pbtts >= 55:
+            placares = ["2x1", "3x1", "2x2", "3x2"]
+
+        elif pbtts >= 60:
+            placares = ["1x1", "2x1", "2x2"]
+
+        else:
+            placares = ["1x0", "1x1", "2x0"]
+
+        for p in placares:
+            st.write(f"• {p}")
+
+        # =========================
+        # ENVIAR TELEGRAM
+        # =========================
+
         if st.button("🚀 ENVIAR", key=f"en_{titulo}", type="primary"):
 
             res = requests.post(
@@ -302,6 +376,7 @@ def renderizar_bloco(titulo):
 # =========================
 # 4 COLUNAS
 # =========================
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
