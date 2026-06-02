@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(layout="wide", page_title="Sistema Brazukas")
+st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
 st.title("🤖 Sistema Brazukas Top Tips (4 Jogos)")
 
 TOKEN = st.secrets.get("token", "")
@@ -25,7 +25,7 @@ def calcular_probabilidade(texto):
         elif g2 > g1: v_vis += 1
         else: empate += 1
         i += 2
-    if total == 0: return 33.3, 33.3, 33.3, 75.0, 60.0, 50.0, 50.0
+    if total == 0: return 0, 0, 0, 0, 0, 0, 0
     p15 = min(round(((over15/total)*100)+5, 1), 95)
     p25 = min(round(((over25/total)*100)+5, 1), 90)
     pb = min(round((btts/total)*100, 1), 85)
@@ -41,7 +41,7 @@ def renderizar_bloco(titulo):
     pm = st.text_input("Momento", key=f"pm_{titulo}")
     pht = st.text_input("HT", key=f"pht_{titulo}")
     pf = st.text_input("Final", key=f"pf_{titulo}")
-    lista = st.text_area("Lista", key=f"l_{titulo}")
+    lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
 
     if st.button("Analisar", key=f"an_{titulo}"):
         st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
@@ -50,14 +50,21 @@ def renderizar_bloco(titulo):
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
         
-        st.write("📊 **Estatísticas:**")
+        # Barras de Progresso
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
         st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
         st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
+        # Resumo de Mercados Fortes
+        st.write("🔥 **Mercados Mais Fortes:**")
+        if p15 >= 75: st.write(f"✅ Over 1.5 FT ({p15}%)")
+        if p25 >= 65: st.write(f"🔥 Over 2.5 FT ({p25}%)")
+        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
+        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
+        
         tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-        msg = f"🚨 Alerta\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n⏰ {hora}"
+        msg = f"🚨 Alerta de Entrada\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n⏰ {hora}"
         st.info(msg)
         
         if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
@@ -71,10 +78,10 @@ def renderizar_bloco(titulo):
         def at(s, pl):
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"})
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("Momento", key=f"m_{titulo}"): at("GREEN", f"Momento: {pm}")
-        if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO", f"HT: {pht}")
-        if c3.button("Final", key=f"f_{titulo}"): at("GREEN", f"HT: {pht} | Final: {pf}")
-        if c4.button("RED", key=f"r_{titulo}"): at("RED", f"HT: {pht} | Final: {pf}")
+        if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
+        if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
+        if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
+        if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
