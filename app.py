@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 import re
 
-st.set_page_config(layout="wide", page_title="Sistema Brazukas Top Tips")
-st.title("🤖 Sistema Brazukas Top Tips (4 Jogos)")
+st.set_page_config(layout="wide", page_title="Sistema Brazukas")
+st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
@@ -38,9 +38,12 @@ def renderizar_bloco(titulo):
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
     hora = st.text_input("Horário", key=f"h_{titulo}")
+    
+    # Campos de status
     pm = st.text_input("Momento", key=f"pm_{titulo}")
     pht = st.text_input("HT", key=f"pht_{titulo}")
     pf = st.text_input("Final", key=f"pf_{titulo}")
+    
     lista = st.text_area("Lista de jogos", key=f"l_{titulo}")
 
     if st.button("Analisar", key=f"an_{titulo}"):
@@ -56,19 +59,27 @@ def renderizar_bloco(titulo):
         st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
         st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
-        # Resumo de Mercados Fortes
-        st.write("🔥 **Mercados Mais Fortes:**")
-        if p15 >= 75: st.write(f"✅ Over 1.5 FT ({p15}%)")
-        if p25 >= 65: st.write(f"🔥 Over 2.5 FT ({p25}%)")
+        st.write("🔥 **Mercados Fortes:**")
+        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
+        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
         if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
         if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
-        tipo = st.selectbox("Mercado", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-        msg = f"🚨 Alerta de Entrada\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 {tipo}\n⏰ {hora}"
+        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
+        secundario = st.text_input("Mercado Secundário (Cantos)", key=f"sec_{titulo}")
+        
+        msg = (f"🚨 *ALERTA DE ENTRADA*\n\n"
+               f"🏆 *Campeonato:* {camp}\n"
+               f"⚽ *Jogo:* {casa} x {vis}\n"
+               f"🎯 *Mercado Principal:* {tipo}\n"
+               f"📈 *Mercado Secundário:* {secundario}\n"
+               f"⏰ *Horário:* {hora}")
+        
         st.info(msg)
         
         if st.button("🚀 ENVIAR", key=f"en_{titulo}"):
-            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
+            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", 
+                                data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}).json()
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
                 st.session_state[f"msg_{titulo}"] = msg
@@ -76,13 +87,17 @@ def renderizar_bloco(titulo):
 
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
-            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"})
+            new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", 
+                          data={"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text, "parse_mode": "Markdown"})
+        
         c1, c2, c3, c4 = st.columns(4)
         if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
         if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
         if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
         if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
 
+# Renderizar as 4 colunas
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
 with col2: renderizar_bloco("JOGO_B")
