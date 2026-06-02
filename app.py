@@ -32,9 +32,20 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}"):
+        # Resumo Final e Gráfico (Gráfico ajustado para ficar mais compacto/fino)
         st.write("### 📊 Resumo Final")
-        st.bar_chart({"O 1.5": 85, "O 2.5": 60, "BTTS": 75, "LTD": 40})
+        st.bar_chart({"O 1.5": 85, "O 2.5": 60, "BTTS": 75, "LTD": 40}, height=200)
         
+        # Mercados Fortes e Aposta Recomendada
+        col_m, col_p = st.columns(2)
+        with col_m:
+            st.write("### 🎯 Mercados Mais Fortes")
+            st.write("✅ Over 1.5 FT — Muito Forte\n🔥 LTD — Forte")
+        with col_p:
+            st.write("### 📌 Placares Sugeridos")
+            st.write("• 1x0 | 1x1 | 2x1")
+            st.success("🎯 Aposta Recomendada: Over 1.5 FT")
+
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
             st.session_state[f"mid_{nome}"] = telegram(msg)
@@ -63,4 +74,3 @@ c1, c2, c3 = st.columns(3)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
 with c3: jogo_c_escanteios()
-    
