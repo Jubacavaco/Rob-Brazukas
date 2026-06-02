@@ -56,24 +56,28 @@ def renderizar_bloco(titulo):
         st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
         
         st.write("🔥 **Mercados Fortes:**")
-        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)")
-        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)")
-        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
-        if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
+        sugestao = "Nenhuma entrada clara"
+        if p15 >= 75: 
+            st.write(f"✅ Over 1.5 ({p15}%)")
+            sugestao = "Over 1.5 FT"
+        if p25 >= 65: 
+            st.write(f"🔥 Over 2.5 ({p25}%)")
+            sugestao = "Over 2.5 FT"
+        if pb >= 60: 
+            st.write(f"🔥 BTTS ({pb}%)")
+            sugestao = "BTTS"
+        if pl >= 80: 
+            st.write(f"🔥 LTD ({pl}%)")
+            sugestao = "LTD"
+            
+        st.success(f"💡 Aposta Recomendada: {sugestao}")
         
-        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD", "Quem Vence"], key=f"sel_{titulo}")
-        
-        # Lógica para o novo seletor condicional
-        if tipo == "Quem Vence":
-            vencedor = st.selectbox("Escolha o vencedor:", ["Casa", "Visitante", "Empate"], key=f"venc_{titulo}")
-            mercado_final = f"Quem Vence ({vencedor})"
-        else:
-            mercado_final = tipo
+        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"sel_{titulo}")
         
         msg = (f"🚨 Alerta de Entrada 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
-               f"🎯 Mercado: {mercado_final}\n"
+               f"🎯 Mercado: {tipo}\n"
                f"📈 Probabilidade: {prob}%\n"
                f"⏰ Horário: {hora}\n\n\n"
                f"🔞 Aposte com responsabilidade.\n"
