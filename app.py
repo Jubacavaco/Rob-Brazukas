@@ -8,17 +8,28 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
-# Função do gráfico (Restaurada)
 def renderizar_grafico(dados):
     labels, valores = list(dados.keys()), list(dados.values())
+    # O gráfico agora mostra os mercados específicos que você pediu
     components.html(f"""
     <div style="height:200px;"><canvas id="chart"></canvas></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     new Chart(document.getElementById('chart'), {{
         type: 'bar',
-        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#ef4444' }}] }},
-        options: {{ responsive: true, maintainAspectRatio: false, scales: {{ y: {{ max: 100, beginAtZero: true }} }} }}
+        data: {{ 
+            labels: {labels}, 
+            datasets: [{{ 
+                label: 'Probabilidade (%)',
+                data: {valores}, 
+                backgroundColor: '#ef4444' 
+            }}] 
+        }},
+        options: {{ 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: {{ y: {{ max: 100, beginAtZero: true }} }} 
+        }}
     }});
     </script>
     """, height=220)
@@ -45,15 +56,15 @@ def jogo_normal(nome):
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
-        # Dados do gráfico (o "mercado pegando fogo")
-        st.session_state[f"p_{nome}"] = {"BTTS": 65, "O1.5": 88, "O2.5": 55, "LTD": 72, "Casa": 60, "Vis": 20}
+        # Aqui estão os mercados que você pediu para o gráfico
+        st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "AMBOS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
         st.success("Análise feita!")
 
     d = st.session_state.get(f"d_{nome}")
     p = st.session_state.get(f"p_{nome}")
     
     if d and p:
-        renderizar_grafico(p) # Gráfico restaurado
+        renderizar_grafico(p)
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"""🚨 Alerta de Cantos 🚨
