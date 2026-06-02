@@ -1,53 +1,49 @@
 import streamlit as st
 import requests
-import streamlit.components.v1 as components
 
-st.set_page_config(layout="wide", page_title="Sistema Brazukas")
+st.set_page_config(layout="wide")
+st.title("🤖 Sistema Brazukas")
 
-# --- Funções Base ---
-def enviar_ou_editar(nome, msg):
-    try:
-        url_base = f"https://api.telegram.org/bot8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
-        payload = {"chat_id": "-1003925163611", "text": msg}
-        if f"msg_id_{nome}" in st.session_state:
-            payload["message_id"] = st.session_state[f"msg_id_{nome}"]
-            requests.post(f"{url_base}/editMessageText", json=payload)
-        else:
-            resp = requests.post(f"{url_base}/sendMessage", json=payload).json()
-            if resp.get("ok"):
-                st.session_state[f"msg_id_{nome}"] = resp["result"]["message_id"]
-    except Exception as e:
-        st.error(f"Erro Telegram: {e}")
+# Token e Chat fixos para evitar erros de escopo
+TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
+CHAT_ID = "-1003925163611"
 
-# --- Interface Jogo Normal ---
+def telegram(msg, msg_id=None):
+    url = f"https://api.telegram.org/bot{TOKEN}/"
+    if msg_id:
+        requests.post(url + "editMessageText", json={"chat_id": CHAT_ID, "message_id": msg_id, "text": msg})
+    else:
+        resp = requests.post(url + "sendMessage", json={"chat_id": CHAT_ID, "text": msg}).json()
+        return resp.get("result", {}).get("message_id")
+
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
+    # Inputs básicos
+    casa = st.text_input("Casa", key=f"casa_{nome}")
+    vis = st.text_input("Visitante", key=f"vis_{nome}")
+    ht = st.text_input("HT", key=f"ht_{nome}")
+    ft = st.text_input("FT", key=f"ft_{nome}")
     
-    # Inputs
-    camp = st.text_input("Campeonato", key=f"c_{nome}")
-    casa = st.text_input("Casa", key=f"ca_{nome}")
-    vis = st.text_input("Visitante", key=f"vi_{nome}")
-    ht = st.text_input("Placar HT", key=f"ht_{nome}")
-    ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    
-    if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "ht": ht, "ft": ft}
-        st.success("Análise feita!")
+    # Armazena tudo em um dicionário único no session_state
+    if st.button("ANALISAR", key=f"ana_{nome}"):
+        st.session_state[f"d_{nome}"] = {"casa": casa, "vis": vis, "ht": ht, "ft": ft}
+        st.success("Dados salvos!")
 
-    # Ações
-    if f"dados_{nome}" in st.session_state:
-        d = st.session_state[f"dados_{nome}"]
-        if st.button("🚀 ENVIAR", key=f"env_{nome}"):
-            msg = f"🚨 Alerta 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}"
-            enviar_ou_editar(nome, msg)
+    # Só mostra os botões se houver dados
+    if f"d_{nome}" in st.session_state:
+        d = st.session_state[f"d_{nome}"]
+        msg_txt = f"🚨 Jogo: {d['casa']} x {d['vis']}\nHT: {d['ht']} | FT: {d['ft']}"
         
-        col1, col2 = st.columns(2)
-        if col1.button("✅ HT GREEN", key=f"htg_{nome}"): enviar_ou_editar(nome, f"✅ HT GREEN: {d['ht']}")
-        if col2.button("❌ RED", key=f"red_{nome}"): enviar_ou_editar(nome, f"❌ RED: {d['ft']}")
+        if st.button("ENVIAR", key=f"env_{nome}"):
+            mid = telegram(msg_txt)
+            st.session_state[f"mid_{nome}"] = mid
+            
+        if f"mid_{nome}" in st.session_state:
+            mid = st.session_state[f"mid_{nome}"]
+            if st.button("✅ HT GREEN", key=f"htg_{nome}"): telegram(f"✅ HT GREEN: {d['ht']}", mid)
+            if st.button("❌ RED", key=f"red_{nome}"): telegram(f"❌ RED: {d['ft']}", mid)
 
-# --- Layout Final ---
-c1, c2, c3, c4 = st.columns(4)
-with c1: jogo_normal("JOGO_A")
-with c2: jogo_normal("JOGO_B")
-with c3: jogo_normal("JOGO_C")
-with c4: st.subheader("JOGO_D") # Mantenha seu JOGO_D aqui
+col1, col2, col3 = st.columns(3)
+with col1: jogo_normal("JOGO_A")
+with col2: jogo_normal("JOGO_B")
+with col3: jogo_normal("JOGO_C")
