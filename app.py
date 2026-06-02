@@ -1,12 +1,17 @@
 import streamlit as st
 import requests
 import re
+from supabase import create_client
 
-st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Top Tips")
+# Conexão Supabase
+SUPABASE_URL = "https://levzsvuikgqfnosykigi.supabase.co"
+SUPABASE_KEY = "sb_publishable_esm8GzVdsIrPSjfcAkcX8Q_0NYasNBn"
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
+
+# --- Funções ---
 
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b\d+\b', texto)
@@ -47,58 +52,39 @@ def renderizar_bloco(titulo):
     if st.button("Analisar", key=f"an_{titulo}"):
         st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
 
+    # Verifica no banco se tem sinal ativo para este bloco
+    db_res = supabase.table("sinais").select("*").eq("bloco", titulo).eq("status", "ativa").execute()
+    msg_ativa = db_res.data[0] if db_res.data else None
+
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
-        
-        st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
-        st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
-        st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
-        st.progress(max(min(pl/100, 1), 0), text=f"LTD: {pl}%")
-        
         st.write("🔥 **Mercados Fortes:**")
-        sugestao = "Nenhuma entrada clara"
-        if p15 >= 75: 
-            st.write(f"✅ Over 1.5 ({p15}%)")
-            sugestao = "Over 1.5 FT"
-        if p25 >= 65: 
-            st.write(f"🔥 Over 2.5 ({p25}%)")
-            sugestao = "Over 2.5 FT"
-        if pb >= 60: 
-            st.write(f"🔥 BTTS ({pb}%)")
-            sugestao = "BTTS"
-        if pl >= 80: 
-            st.write(f"🔥 LTD ({pl}%)")
-            sugestao = "LTD"
-            
+        sugestao = "Nenhuma"
+        if p15 >= 75: st.write(f"✅ Over 1.5 ({p15}%)"); sugestao = "Over 1.5 FT"
+        if p25 >= 65: st.write(f"🔥 Over 2.5 ({p25}%)"); sugestao = "Over 2.5 FT"
+        if pb >= 60: st.write(f"🔥 BTTS ({pb}%)"); sugestao = "BTTS"
+        if pl >= 80: st.write(f"🔥 LTD ({pl}%)"); sugestao = "LTD"
         st.success(f"💡 Aposta Recomendada: {sugestao}")
-        
         tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD", "Casa Vence", "Visitante Vence"], key=f"sel_{titulo}")
         
-        msg = (f"🚨 Alerta de Entrada 🚨\n\n"
-               f"🏆 Campeonato: {camp}\n"
-               f"🆚 Jogo: {casa} x {vis}\n"
-               f"🎯 Mercado: {tipo}\n"
-               f"📈 Probabilidade: {prob}%\n"
-               f"⏰ Horário: {hora}\n\n\n"
-               f"🔞 Aposte com responsabilidade.\n"
-               f"⚠️ Não há garantias de lucro.")
-        
+        msg = (f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {tipo}\n📈 Probabilidade: {prob}%\n⏰ Horário: {hora}\n\n\n🔞 Aposte com responsabilidade.\n⚠️ Não há garantias de lucro.")
         st.info(msg)
         
         if st.button("🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}"):
-            payload = {"chat_id": CHAT_ID, "text": msg}
-            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data=payload).json()
+            res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg}).json()
             if res.get("ok"):
-                st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
-                st.session_state[f"msg_{titulo}"] = msg
-                st.success("Enviado!")
+                supabase.table("sinais").insert({"message_id": res["result"]["message_id"], "bloco": titulo, "msg_original": msg, "status": "ativa"}).execute()
+                st.success("Enviado!"); st.rerun()
 
-    if f"id_{titulo}" in st.session_state:
+    # Botões de edição (aparecem se existir msg_ativa no Supabase)
+    if msg_ativa:
+        st.warning(f"⚠️ Alerta Ativo (ID: {msg_ativa['message_id']})")
         def at(status, info):
-            new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {info}\n\n🔄 {status}"
-            payload = {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text}
-            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data=payload)
-        
+            new_text = f"{msg_ativa['msg_original']}\n\n⚽ {info}\n\n🔄 {status}"
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data={"chat_id": CHAT_ID, "message_id": msg_ativa['message_id'], "text": new_text})
+            supabase.table("sinais").update({"status": "finalizada"}).eq("message_id", msg_ativa['message_id']).execute()
+            st.rerun()
+            
         c1, c2, c3, c4 = st.columns(4)
         if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
         if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
