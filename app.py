@@ -32,19 +32,9 @@ def jogo_normal(nome):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}"):
-        # --- RESUMO FINAL ---
         st.write("### 📊 Resumo Final")
         st.bar_chart({"O 1.5": 85, "O 2.5": 60, "BTTS": 75, "LTD": 40})
-        st.markdown(f"| Mercado | Prob |\n|---|---|\n| ✅ O 1.5 | 85% |\n| ⚠️ O 2.5 | 60% |")
         
-        # --- MERCADOS FORTES ---
-        st.write("### 🎯 Mercados Mais Fortes")
-        st.write("✅ Over 1.5 FT — Muito Forte\n🔥 LTD — Forte")
-        
-        # --- PLACARES ---
-        st.write("### 📌 Placares Compatíveis")
-        st.write("• 1x0 | 1x1 | 2x1")
-
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
             st.session_state[f"mid_{nome}"] = telegram(msg)
@@ -53,10 +43,10 @@ def jogo_normal(nome):
         if mid:
             base = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prognóstico: {mercado}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario} (BR)\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
             c1, c2 = st.columns(2)
-            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nHT: ({ht})\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nHT: ({ht})\n✅✅✅", mid)
-            if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nHT: ({ht})\nFT: ({ft})\n🏆🏆🏆", mid)
-            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nHT: ({ht})\nFT: ({ft})\n❌❌❌", mid)
+            if c1.button("⏱️ MOMENTO", key=f"mom_{nome}"): telegram(f"{base}\n\nPlacar: ({ht})\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key=f"htg_{nome}"): telegram(f"{base}\n\nPlacar: ({ht})\n✅✅✅ GREEN ✅✅✅", mid)
+            if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: ({ht})\nPlacar FT: ({ft})\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
+            if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar: ({ft})\n❌❌❌ RED ❌❌❌", mid)
 
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
@@ -66,11 +56,11 @@ def jogo_c_escanteios():
     mid = st.session_state.get("mid_c")
     if mid:
         if st.button("⚪ MOMENTO", key="c_mom"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n⚪ Em Andamento", mid)
-        if st.button("✅ GREEN", key="c_gr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n✅✅✅", mid)
-        if st.button("❌ RED", key="c_red"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n❌❌❌", mid)
+        if st.button("✅ GREEN", key="c_gr"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n✅✅✅ GREEN ✅✅✅", mid)
+        if st.button("❌ RED", key="c_red"): telegram(f"🚨 Alerta de Escanteios 🚨\n\n🎯 Linha: {linha}\n❌❌❌ RED ❌❌❌", mid)
 
-# Layout
 c1, c2, c3 = st.columns(3)
 with c1: jogo_normal("JOGO_A")
 with c2: jogo_normal("JOGO_B")
 with c3: jogo_c_escanteios()
+    
