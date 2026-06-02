@@ -58,6 +58,8 @@ def jogo_normal(nome):
         res = st.session_state.get(f"res_{nome}")
         st.write("### 📊 Resumo")
         for k, v in res.items(): st.write(f"**{k}:** {v}%")
+        melhor = max(res, key=res.get)
+        st.success(f"🎯 Aposta Recomendada: {melhor}")
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 Campeonato: {camp}\n🆚 Jogo: {casa} x {vis}\n🎯 Mercado: {prognostico}\n💥 Prognóstico: {prognostico}\n📈 Probabilidade: {prob}%\n⏰ Horário: {horario}"
@@ -72,7 +74,6 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# --- JOGO C MANTIDO COMO ESTAVA ORIGINALMENTE ---
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -87,12 +88,20 @@ def jogo_c_escanteios():
     e_vis_atual = st.number_input("Cantos Fora", step=1, key="e_vis_c")
     
     if st.button("📊 ANALISAR JOGO C", key="ana_c"): st.session_state["analise_c"] = True
-    if st.session_state.get("analise_c", False):
-        st.write("### 📊 Gráfico de Escanteios FT")
-        st.bar_chart(pd.DataFrame({'Probabilidade': [90, 75, 50, 25]}, index=["O 7.5", "O 8.5", "O 9.5", "O 10.5"]))
-        linha = st.selectbox("Linha", [7.5, 8.5, 9.5, 10.5], key="linha_c")
+    if st.session_state.get("analise_c"):
+        linha = st.selectbox("Linha Escolhida", [7.5, 8.5, 9.5, 10.5], key="linha_c")
         if st.button("🚀 ENVIAR ALERTA ESCANTEIO", key="env_c"):
-            st.session_state["mid_c"] = telegram(f"🚨 Escanteio: {linha}")
+            msg = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}"
+            st.session_state["mid_c"] = telegram(msg)
+        
+        mid = st.session_state.get("mid_c")
+        if mid:
+            base = f"🚨 Alerta Escanteio 🚨\n\n🏆 {camp_c}\n🆚 {casa_c} x {vis_c}\n🎯 Linha: {linha}"
+            c1, c2 = st.columns(2)
+            if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
+            if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
+            if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
+            if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
 
 col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
