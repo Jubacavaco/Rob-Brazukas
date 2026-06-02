@@ -34,6 +34,8 @@ def jogo_normal(nome):
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
+    # Reintroduzindo a lista de análise
+    st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
@@ -55,7 +57,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios)
+# Função Jogo C (Escanteios - Mantida intacta)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -94,7 +96,7 @@ def jogo_c_escanteios():
             
             c1, c2 = st.columns(2)
             if c1.button("⚪ MOMENTO", key="c_mom"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n⚪ Em Andamento", mid)
-            if c1.button("✅ HT", key="c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
+            if c1.button("✅ HT", key=f"c_ht"): telegram(f"{base}\n\nPlacar HT: {ht_c}\n✅✅✅ GREEN ✅✅✅", mid)
             if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
 
