@@ -51,6 +51,9 @@ def calcular_probabilidade(texto):
 def renderizar_bloco(titulo):
     st.subheader(f"🏟️ {titulo}")
 
+    st.write("URL FINAL:")
+    st.write(f"https://api.telegram.org/bot{TOKEN}/getMe")
+
     camp = st.text_input("Campeonato", key=f"c_{titulo}")
     casa = st.text_input("Casa", key=f"ca_{titulo}")
     vis = st.text_input("Visitante", key=f"v_{titulo}")
