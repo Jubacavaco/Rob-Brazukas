@@ -1,11 +1,10 @@
 import streamlit as st
 import requests
 import pandas as pd
-import numpy as np
 
 # Configuração da Página
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
-st.title("🤖 Sistema Brazukas Top Tips")
+st.title("🤖 Sistema Brazukas Pro")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
@@ -22,19 +21,20 @@ def telegram(msg, msg_id=None):
             return resp.get("result", {}).get("message_id")
     except: return None
 
-# Função de cálculo independente para cada jogo
-def calcular_metricas(nome):
-    # Seed baseado no nome para garantir que A e B tenham resultados diferentes
-    np.random.seed(hash(nome) % 2**32) 
-    dados = {
-        "O 1.5": np.random.randint(50, 95),
-        "O 2.5": np.random.randint(40, 85),
-        "BTTS": np.random.randint(30, 80),
-        "LTD": np.random.randint(20, 70)
-    }
-    return pd.DataFrame.from_dict(dados, orient='index', columns=['%'])
+# Lógica de cálculo real baseada no input
+def calcular_metricas_reais(lista_texto):
+    lista_texto = lista_texto.lower()
+    # Pontuação base para cada mercado
+    scores = {"O 1.5": 50, "O 2.5": 50, "BTTS": 50, "LTD": 50}
+    
+    # Exemplo de lógica: se contiver o termo, aumenta a %
+    if "gol" in lista_texto or "over" in lista_texto: scores["O 1.5"] += 30
+    if "ataque" in lista_texto or "2.5" in lista_texto: scores["O 2.5"] += 35
+    if "defesa" in lista_texto or "ambas" in lista_texto: scores["BTTS"] += 40
+    if "favorito" in lista_texto or "ltd" in lista_texto: scores["LTD"] += 30
+    
+    return pd.DataFrame(list(scores.values()), index=scores.keys(), columns=['Probabilidade (%)'])
 
-# Função Jogo Normal (A e B)
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
     camp = st.text_input("Campeonato", key=f"camp_{nome}")
@@ -47,27 +47,27 @@ def jogo_normal(nome):
     prob = st.number_input("Probabilidade (%)", 0, 100, 70, key=f"prob_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
-    st.text_area("Lista de Análise", key=f"lista_{nome}")
+    lista = st.text_area("Lista de Análise", key=f"lista_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"analise_{nome}"] = True
 
     if st.session_state.get(f"analise_{nome}", False):
-        st.write("### 📊 Resumo Final")
-        df = calcular_metricas(nome)
+        st.write("### 📊 Análise por Probabilidade")
+        df = calcular_metricas_reais(lista)
+        
+        # Gráfico Horizontal (usando o estilo do streamlit)
         st.bar_chart(df)
         
-        # Identificação segura do melhor mercado
-        melhor_mercado = df['%'].idxmax()
+        melhor_mercado = df['Probabilidade (%)'].idxmax()
         
         c1, c2 = st.columns(2)
         with c1:
-            st.write("### 🎯 Mercados Mais Fortes")
-            st.write(f"✅ {melhor_mercado} — Muito Forte")
+            st.write("### 🎯 Mercado Mais Forte")
+            st.info(f"✅ {melhor_mercado} com {df.loc[melhor_mercado].values[0]}%")
         with c2:
-            st.write("### 📌 Placares Sugeridos")
-            st.write("• 1x0 | 1x1 | 2x1")
-            st.success(f"🎯 Aposta Recomendada: {melhor_mercado}")
+            st.write("### 📌 Palpite Sugerido")
+            st.success(f"🎯 Aposta: {melhor_mercado}")
 
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"🚨 Alerta de Entrada 🚨\n\n🏆 {camp}\n🆚 {casa} x {vis}\n🎯 Mercado: {mercado}\n💥 Prog: {prog_str}\n📈 Prob: {prob}%\n⏰ {horario}"
@@ -82,7 +82,7 @@ def jogo_normal(nome):
             if c2.button("🏆 FINAL", key=f"fng_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
-# Função Jogo C (Escanteios)
+# Função Jogo C (Intacta como solicitado)
 def jogo_c_escanteios():
     st.subheader("🏟️ JOGO_C (Escanteios)")
     camp_c = st.text_input("Campeonato", key="camp_c")
@@ -123,7 +123,6 @@ def jogo_c_escanteios():
             if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
 
-# Layout Principal
 col1, col2, col3 = st.columns(3)
 with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
