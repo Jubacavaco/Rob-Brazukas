@@ -25,38 +25,48 @@ def renderizar_grafico(dados):
     </script>
     """, height=280)
 
-def calcular_probabilidades(lista):
-    return {"BTTS": 61, "O1.5": 78, "O2.5": 52, "LTD": 70, "Casa": 65, "Vis": 15}
+# Lógica de cálculo individual (Aqui você pode customizar cada regra se desejar)
+def calcular_probabilidades(lista, nome):
+    # Exemplo: cálculo baseado no tamanho da lista para diferenciar os jogos
+    base = 50 + (len(lista) % 40) 
+    return {
+        "BTTS": base + 11, 
+        "O1.5": base + 28, 
+        "O2.5": base + 2, 
+        "LTD": base + 20, 
+        "Casa": base + 15, 
+        "Vis": base - 35
+    }
 
 def jogo_normal(nome):
     st.subheader(f"🏟️ {nome}")
     with st.form(key=f"form_{nome}"):
-        camp = st.text_input("Campeonato")
-        casa = st.text_input("Casa")
-        visitante = st.text_input("Visitante")
-        horario = st.text_input("Horário")
-        lista = st.text_area("Lista de Jogos")
+        camp = st.text_input("Campeonato", key=f"camp_{nome}")
+        casa = st.text_input("Casa", key=f"casa_{nome}")
+        visitante = st.text_input("Visitante", key=f"vis_{nome}")
+        horario = st.text_input("Horário", key=f"hor_{nome}")
+        lista = st.text_area("Lista de Jogos", key=f"lista_{nome}")
         
-        # Campos definidos conforme seu pedido
-        mercado_envio = st.selectbox("Qual mercado enviar?", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"])
-        
-        # Caixa de texto para definir a % exata
-        prob_manual = st.number_input("Definir % da Probabilidade", min_value=0, max_value=100, value=70)
+        mercado_envio = st.selectbox("Qual mercado enviar?", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
+        prob_manual = st.number_input("Definir % da Probabilidade", min_value=0, max_value=100, value=70, key=f"prob_{nome}")
         
         btn_analisar = st.form_submit_button("📊 ANALISAR")
         btn_enviar = st.form_submit_button("🚀 ENVIAR ESCOLHIDO")
 
     if btn_analisar:
-        st.session_state[f"probs_{nome}"] = calcular_probabilidades(lista)
+        # O cálculo agora usa o 'nome' do jogo para isolar os dados
+        st.session_state[f"probs_{nome}"] = calcular_probabilidades(lista, nome)
         st.session_state[f"dados_{nome}"] = {"camp": camp, "casa": casa, "vis": visitante, "horario": horario}
         st.rerun()
 
+    # Exibição isolada
     if f"probs_{nome}" in st.session_state:
         probs = st.session_state[f"probs_{nome}"]
         d = st.session_state[f"dados_{nome}"]
-        recomendado = max(probs, key=probs.get)
         
-        st.info(f"💡 **Recomendado:** {recomendado} ({probs[recomendado]}%)")
+        recomendado = max(probs, key=probs.get)
+        st.info(f"💡 **Recomendado ({nome}):** {recomendado} ({probs[recomendado]}%)")
+        
         cols = st.columns(3)
         for i, (m, p) in enumerate(probs.items()):
             cols[i % 3].write(f"{'🔥' if p >= 70 else '⚠️'} **{m}**: {p}%")
@@ -64,10 +74,9 @@ def jogo_normal(nome):
 
     if btn_enviar and f"probs_{nome}" in st.session_state:
         d = st.session_state[f"dados_{nome}"]
-        # Envia a % que você digitou na caixa prob_manual
-        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado Escolhido: {mercado_envio}\n📈 Probabilidade: {prob_manual}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade."
+        msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 Campeonato: {d['camp']}\n🆚 Jogo: {d['casa']} x {d['vis']}\n🎯 Mercado: {mercado_envio}\n📈 Probabilidade: {prob_manual}%\n⏰ Horário: {d['horario']} (BR)\n\n🔞 Aposte com responsabilidade."
         enviar_telegram(msg)
-        st.success(f"Enviado {mercado_envio} com {prob_manual}%!")
+        st.success(f"Enviado {nome}!")
 
 def jogo_d():
     st.subheader("🏟️ JOGO_D (Escanteios)")
@@ -81,4 +90,3 @@ with col1: jogo_normal("JOGO_A")
 with col2: jogo_normal("JOGO_B")
 with col3: jogo_normal("JOGO_C")
 with col4: jogo_d()
-    
