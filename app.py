@@ -61,13 +61,13 @@ def renderizar_bloco(titulo):
         if pb >= 60: st.write(f"🔥 BTTS ({pb}%)")
         if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
-        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
+        tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD", "Quem Vence"], key=f"sel_{titulo}")
         
         msg = (f"🚨 Alerta de Entrada 🚨\n\n"
                f"🏆 Campeonato: {camp}\n"
                f"🆚 Jogo: {casa} x {vis}\n"
                f"🎯 Mercado: {tipo}\n"
-               f"📈 Probabilidade: {prob}\n"
+               f"📈 Probabilidade: {prob}%\n"
                f"⏰ Horário: {hora}\n\n\n"
                f"🔞 Aposte com responsabilidade.\n"
                f"⚠️ Não há garantias de lucro.")
