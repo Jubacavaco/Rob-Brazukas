@@ -100,10 +100,10 @@ def renderizar_bloco(titulo):
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data=payload)
         
         c1, c2, c3, c4 = st.columns(4)
-        if c1.button("Momento", key=f"m_{titulo}"): at("GREEN 🟢", f"Momento: {pm}")
-        if c2.button("HT", key=f"ht_{titulo}"): at("EM ANDAMENTO ⚪", f"HT: {pht}")
-        if c3.button("Final", key=f"f_{titulo}"): at("GREEN 🟢", f"HT: {pht} | Final: {pf}")
-        if c4.button("RED", key=f"r_{titulo}"): at("RED 🔴", f"HT: {pht} | Final: {pf}")
+        if c1.button("Momento", key=f"m_{titulo}"): at("✅ GREEN ✅", f"Momento: {pm}")
+        if c2.button("HT", key=f"ht_{titulo}"): at("⚪ EM ANDAMENTO ⚪", f"HT: {pht}")
+        if c3.button("Final", key=f"f_{titulo}"): at("✅ GREEN GIGANTE ✅", f"HT: {pht} | Final: {pf}")
+        if c4.button("RED", key=f"r_{titulo}"): at("❌ RED ❌", f"HT: {pht} | Final: {pf}")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: renderizar_bloco("JOGO_A")
