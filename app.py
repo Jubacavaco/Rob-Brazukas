@@ -8,6 +8,7 @@ st.title("🤖 Sistema Brazukas Top Tips")
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
 CHAT_ID = "-1003925163611"
 
+# Função do gráfico (Restaurada)
 def renderizar_grafico(dados):
     labels, valores = list(dados.keys()), list(dados.values())
     components.html(f"""
@@ -16,8 +17,8 @@ def renderizar_grafico(dados):
     <script>
     new Chart(document.getElementById('chart'), {{
         type: 'bar',
-        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#3b82f6' }}] }},
-        options: {{ responsive: true, maintainAspectRatio: false }}
+        data: {{ labels: {labels}, datasets: [{{ data: {valores}, backgroundColor: '#ef4444' }}] }},
+        options: {{ responsive: true, maintainAspectRatio: false, scales: {{ y: {{ max: 100, beginAtZero: true }} }} }}
     }});
     </script>
     """, height=220)
@@ -44,12 +45,15 @@ def jogo_normal(nome):
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado, "prob": prob}
-        st.session_state[f"p_{nome}"] = {"BTTS": 60, "O1.5": 80, "O2.5": 50, "LTD": 70}
+        # Dados do gráfico (o "mercado pegando fogo")
+        st.session_state[f"p_{nome}"] = {"BTTS": 65, "O1.5": 88, "O2.5": 55, "LTD": 72, "Casa": 60, "Vis": 20}
         st.success("Análise feita!")
 
     d = st.session_state.get(f"d_{nome}")
-    if d:
-        renderizar_grafico(st.session_state.get(f"p_{nome}", {}))
+    p = st.session_state.get(f"p_{nome}")
+    
+    if d and p:
+        renderizar_grafico(p) # Gráfico restaurado
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
             msg = f"""🚨 Alerta de Cantos 🚨
