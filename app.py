@@ -8,6 +8,9 @@ st.title("🤖 Sistema Brazukas Top Tips (4 Jogos)")
 TOKEN = st.secrets.get("token", "")
 CHAT_ID = st.secrets.get("chat_id", "")
 
+st.write("TOKEN DEBUG:", repr(TOKEN))
+st.write("LEN TOKEN:", len(TOKEN))
+
 def calcular_probabilidade(texto):
     numeros = re.findall(r'\b\d+\b', texto)
     gols = [int(n) for n in numeros if int(n) <= 10]
