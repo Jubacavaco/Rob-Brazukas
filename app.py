@@ -38,17 +38,16 @@ def jogo_normal(nome):
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("Placar HT", key=f"ht_{nome}")
     ft = st.text_input("Placar FT", key=f"ft_{nome}")
+    lista = st.text_area("Lista", key=f"lista_{nome}")
     
-    # Campo de input para a aposta
-    aposta_rec = st.text_input("Aposta Recomendada", key=f"rec_{nome}")
-    
-    mercado = st.selectbox("Mercado", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
+    # O mercado selecionado será o prognóstico
+    mercado = st.selectbox("Mercado (Prognóstico)", ["BTTS", "O1.5", "O2.5", "LTD", "Casa", "Vis"], key=f"merc_{nome}")
     prob = st.number_input("% Probabilidade", 0, 100, 70, key=f"prob_{nome}")
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
         st.session_state[f"d_{nome}"] = {
             "camp": camp, "casa": casa, "vis": vis, "hor": horario, 
-            "ht": ht, "ft": ft, "merc": mercado, "prob": prob, "rec": aposta_rec
+            "ht": ht, "ft": ft, "merc": mercado, "prob": prob
         }
         st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "AMBOS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
         st.success("Análise feita!")
@@ -57,17 +56,18 @@ def jogo_normal(nome):
     p = st.session_state.get(f"p_{nome}")
     
     if d and p:
-        # A CAIXA VISUAL NO SITE
-        st.info(f"🎯 **Aposta Recomendada:** {d.get('rec')}")
+        # Exibe o prognóstico escolhido em destaque visual no site
+        st.info(f"🎯 **Prognóstico (Mercado):** {d.get('merc')}")
         renderizar_grafico(p)
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
+            # A mensagem usa o mercado selecionado no selectbox
             msg = f"""🚨 Alerta de Cantos 🚨
 
 🏆 Campeonato: {d.get('camp')}
 🆚 Jogo: {d.get('casa')} x {d.get('vis')}
 🎯 Mercado: {d.get('merc')}
-💥 Prognóstico: {d.get('rec')}
+💥 Prognóstico: {d.get('merc')}
 📈 Probabilidade: {d.get('prob')}%
 ⏰ Horário: {d.get('hor')} (BR)
 
