@@ -5,7 +5,6 @@ import re
 st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
 
-# Certifique-se de configurar TOKEN e CHAT_ID no painel Secrets do seu App
 TOKEN = st.secrets.get("TOKEN", "")
 CHAT_ID = st.secrets.get("CHAT_ID", "")
 
@@ -46,10 +45,11 @@ def renderizar_bloco(titulo):
 
     if st.button("Analisar", key=f"an_{titulo}"):
         st.session_state[f"res_{titulo}"] = calcular_probabilidade(lista)
-        st.rerun()
+        # O rerun não é mais necessário aqui para mostrar os dados
 
     if f"res_{titulo}" in st.session_state:
         pc, pv, pe, p15, p25, pb, pl = st.session_state[f"res_{titulo}"]
+        
         st.progress(max(min(p25/100, 1), 0), text=f"O2.5: {p25}%")
         st.progress(max(min(p15/100, 1), 0), text=f"O1.5: {p15}%")
         st.progress(max(min(pb/100, 1), 0), text=f"BTTS: {pb}%")
@@ -62,11 +62,18 @@ def renderizar_bloco(titulo):
         if pl >= 80: st.write(f"🔥 LTD ({pl}%)")
         
         tipo = st.selectbox("Mercado Principal", ["Over 2.5 FT", "Over 1.5 FT", "BTTS", "LTD"], key=f"sel_{titulo}")
-        msg = f"🚨 *ALERTA DE ENTRADA*\n\n🏆 *Campeonato:* {camp}\n⚽ *Jogo:* {casa} x {vis}\n🎯 *Mercado:* {tipo}\n⏰ *Horário:* {hora}"
+        
+        # MENSAGEM NO FORMATO ORIGINAL
+        msg = (f"🚨 Alerta de Entrada 🚨\n\n"
+               f"🏆 Campeonato: {camp}\n"
+               f"🆚 Jogo: {casa} x {vis}\n"
+               f"🎯 Mercado: {tipo}\n"
+               f"⏰ Horário: {hora}")
+        
         st.info(msg)
         
         if st.button("🚀 ENVIAR PARA TELEGRAM", key=f"en_{titulo}"):
-            payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
+            payload = {"chat_id": CHAT_ID, "text": msg}
             res = requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data=payload).json()
             if res.get("ok"):
                 st.session_state[f"id_{titulo}"] = res["result"]["message_id"]
@@ -78,7 +85,7 @@ def renderizar_bloco(titulo):
     if f"id_{titulo}" in st.session_state:
         def at(s, pl):
             new_text = f"{st.session_state[f'msg_{titulo}']}\n\n⚽ {pl}\n\n🔄 {s}"
-            payload = {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text, "parse_mode": "Markdown"}
+            payload = {"chat_id": CHAT_ID, "message_id": st.session_state[f"id_{titulo}"], "text": new_text}
             requests.post(f"https://api.telegram.org/bot{TOKEN}/editMessageText", data=payload)
         
         c1, c2, c3, c4 = st.columns(4)
