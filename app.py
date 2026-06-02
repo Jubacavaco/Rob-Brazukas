@@ -40,18 +40,19 @@ def jogo_normal(nome):
     horario = st.text_input("Horário", key=f"hor_{nome}")
     ht = st.text_input("HT", key=f"ht_{nome}")
     ft = st.text_input("FT", key=f"ft_{nome}")
+    lista = st.text_area("Lista de Jogos", key=f"lista_{nome}") # Caixa reintegrada
     
     if st.button("📊 ANALISAR", key=f"ana_{nome}"):
-        st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado}
+        st.session_state[f"d_{nome}"] = {"camp": camp, "casa": casa, "vis": vis, "hor": horario, "ht": ht, "ft": ft, "merc": mercado, "lista": lista}
         st.session_state[f"p_{nome}"] = {"O1.5": 85, "O2.5": 60, "BTTS": 75, "LTD": 40, "CASA": 65, "VIS": 30}
         st.success("Análise feita!")
 
     d = st.session_state.get(f"d_{nome}")
     if d:
-        renderizar_grafico_barra(st.session_state[f"p_{nome}"])
+        renderizar_grafico_barra(st.session_state.get(f"p_{nome}", {}))
         
         if st.button("🚀 ENVIAR ALERTA", key=f"env_{nome}"):
-            msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n🎯 {d['merc']}\n⏰ {d['hor']}"
+            msg = f"🚨 Alerta de Cantos 🚨\n\n🏆 {d['camp']}\n🆚 {d['casa']} x {d['vis']}\n🎯 {d['merc']}\n⏰ {d['hor']}\n📋 Lista: {d['lista']}"
             st.session_state[f"mid_{nome}"] = telegram(msg)
             
         mid = st.session_state.get(f"mid_{nome}")
