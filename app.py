@@ -1,4 +1,3 @@
-
 import streamlit as st
 import requests
 import pandas as pd
@@ -7,7 +6,7 @@ st.set_page_config(layout="wide", page_title="Sistema Brazukas")
 st.title("🤖 Sistema Brazukas Top Tips")
 
 TOKEN = "8776214366:AAEQnGyhcEa6NQcYzyFAhtVDXKpQx5CoYT0"
-CHAT_ID = "-1003925163611"
+CHAT_ID = "-1002539693401"
 RODAPE = "\n\n🔞Aposte com responsabilidade.\n⚠️ Não há garantias de lucro."
 
 def telegram(msg, msg_id=None):
@@ -84,7 +83,7 @@ def jogo_normal(nome):
             if c2.button("❌ RED", key=f"red_{nome}"): telegram(f"{base}\n\nPlacar HT: {ht}\nPlacar FT: {ft}\n❌❌❌ RED ❌❌❌", mid)
 
 def jogo_c_escanteios():
-    st.subheader("🏟️ JOGO_C (Escanteios)")
+    st.subheader("🏟️ Nome de Escanteios")
     camp_c = st.text_input("Campeonato", key="camp_c")
     casa_c = st.text_input("Casa", key="casa_c")
     vis_c = st.text_input("Visitante", key="vis_c")
@@ -116,7 +115,4 @@ def jogo_c_escanteios():
             if c2.button("🏆 FINAL", key="c_fin"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n🏆🏆🏆 GREEN FINAL 🏆🏆🏆", mid)
             if c2.button("❌ RED", key="c_red"): telegram(f"{base}\n\nPlacar HT: {ht_c}\nPlacar FT: {ft_c}\n❌❌❌ RED ❌❌❌", mid)
 
-col1, col2, col3 = st.columns(3)
-with col1: jogo_normal("JOGO_A")
-with col2: jogo_normal("JOGO_B")
-with col3: jogo_c_escanteios()
+jogo_c_escanteios()
